@@ -903,7 +903,7 @@
     <div class="logo">MEETS EDITOR<span class="logo-dot"></span></div>
     <select id="romProfile" class="profile-select" onchange="onProfileChange()">
       <option value="sanrio">Sanrio</option>
-      <option value="sweets">Sweets</option>
+      <!-- <option value="sweets">Sweets</option> -->
     </select>
     <span class="file-label">ROM:</span>
     <button class="btn btn-pink" onclick="document.getElementById('romFile').click()" id="openBtn">Open ROM</button>
@@ -966,7 +966,7 @@
   <div id="emptyState">
     <div class="empty-icon">&#x1F4BE;</div>
     <strong>No ROM loaded</strong>
-    <p>Select your .bin ROM file to get started, then a translation file!</p>
+    <p>Select your .bin ROM file to get started. Then load a translations.json file.</p>
   </div>
   <table id="strTable" style="display:none">
     <thead>
@@ -1118,14 +1118,14 @@ const TILE_REGISTRY = [
       3: [255,186,16],
       4: [140,142,140],
       5: [0,0,99],
-      6: null,   // read this from ROM
+      6: null,   // read from ROM
       7: [132,206,132],
       8: [189,247,181],
-      9: null,   // read this from ROM
+      9: null,   // read from ROM
       10: [255,255,165],
       11: [230,227,0],
       12: [206,202,41],
-      13: null,  // read this from ROM
+      13: null,  // read from ROM
     },
   },
   {
@@ -1143,8 +1143,8 @@ const TILE_REGISTRY = [
       5: [0,0,99],
     },
   },
-  // Title Screen (4571200) is not in the grid intentionally — it's auto-applied as
-  // my credit on every save via applyTitleCredit().
+  // Title Screen (4571200) is not in the grid — it's auto-applied as
+  // the creator credit on every save via applyTitleCredit().
   {
     name: "EXCELLENT",
     address: 4365956,
@@ -1339,7 +1339,7 @@ let activeTile = null;   // address of expanded tile, or null
 let tileUploadedFile = null;  // File object for the current upload
 
 // ══════════════════════════════════════════════════════════════════════════════
-// STRING ENCODING 
+// STRING ENCODING
 // ══════════════════════════════════════════════════════════════════════════════
 
 function decodeByte(xx) {
@@ -1452,13 +1452,12 @@ const ROM_PROFILES = {
   sanrio: {
     label: 'Sanrio',
     regions: [
-      ['Hotel/Travel NPC',    0x1ACD74, 0x1AFFFF],
       ['UI menus & labels',   0x1B0000, 0x1BBFFF],
       ['Navigation menus',    0x1BC000, 0x1BFFFF],
       ['Character dialogue',  0x1C0000, 0x1CFFFF],
       ['System menus',        0x1D0000, 0x1DFFFF],
-      ['Sanrio dialogue',     0x1E0000, 0x1FD4C3],
-      ['Sanrio items & shop', 0x4E0000, 0x55FFFF],
+      ['Character dialogue',  0x1E0000, 0x1FD4C3],
+      ['Items/Shops',         0x4E0000, 0x55FFFF],
     ],
   },
   sweets: {
@@ -1477,7 +1476,7 @@ const ROM_PROFILES = {
 // APP STATE
 // ══════════════════════════════════════════════════════════════════════════════
 
-const LINE_MAX = 12;      // max chars per line on the screen
+const LINE_MAX = 12;  // max chars per line on the screen but sometimes its also just 9 so... might change lol
 
 // Known substring pointer relationships: another menu reads from charOffset onward.
 // Format: { addr: hex string, charOffset: 1-based start, label: what the substring is used for }
