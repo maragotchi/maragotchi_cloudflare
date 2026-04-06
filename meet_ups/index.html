@@ -966,7 +966,7 @@
   <div id="emptyState">
     <div class="empty-icon">&#x1F4BE;</div>
     <strong>No ROM loaded</strong>
-    <p>Select your .bin ROM file to get started. Then load a translations.json file.</p>
+    <p>Select your .bin ROM file to get started, then a translation file!</p>
   </div>
   <table id="strTable" style="display:none">
     <thead>
@@ -1118,14 +1118,14 @@ const TILE_REGISTRY = [
       3: [255,186,16],
       4: [140,142,140],
       5: [0,0,99],
-      6: null,   // read from ROM
+      6: null,   // read this from ROM
       7: [132,206,132],
       8: [189,247,181],
-      9: null,   // read from ROM
+      9: null,   // read this from ROM
       10: [255,255,165],
       11: [230,227,0],
       12: [206,202,41],
-      13: null,  // read from ROM
+      13: null,  // read this from ROM
     },
   },
   {
@@ -1143,8 +1143,8 @@ const TILE_REGISTRY = [
       5: [0,0,99],
     },
   },
-  // Title Screen (4571200) is not in the grid — it's auto-applied as
-  // the creator credit on every save via applyTitleCredit().
+  // Title Screen (4571200) is not in the grid intentionally — it's auto-applied as
+  // my credit on every save via applyTitleCredit().
   {
     name: "EXCELLENT",
     address: 4365956,
@@ -1339,7 +1339,7 @@ let activeTile = null;   // address of expanded tile, or null
 let tileUploadedFile = null;  // File object for the current upload
 
 // ══════════════════════════════════════════════════════════════════════════════
-// STRING ENCODING (original code continues below)
+// STRING ENCODING 
 // ══════════════════════════════════════════════════════════════════════════════
 
 function decodeByte(xx) {
