@@ -1,0 +1,2644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meets String Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FFF8F0;
+    --card: #FFFFFF;
+    --border: #F0E6DA;
+    --border-strong: #E0D4C8;
+    --pink: #E8587A;
+    --pink-soft: #FDE8ED;
+    --pink-dark: #C9405E;
+    --mint: #5BC4A8;
+    --mint-soft: #E0F5EF;
+    --mint-dark: #3DA88A;
+    --blue: #7B8CDE;
+    --blue-soft: #E8ECFA;
+    --orange: #F4A261;
+    --orange-soft: #FEF0E0;
+    --purple: #A07BDE;
+    --purple-soft: #EDE5FA;
+    --yellow: #E8C547;
+    --yellow-soft: #FDF6D8;
+    --slate: #2D2A32;
+    --muted: #9B95A0;
+    --muted-light: #C8C2CC;
+    --danger: #E05252;
+    --danger-soft: #FDE8E8;
+    --shadow-sm: 0 1px 3px rgba(45,42,50,.06);
+    --shadow-md: 0 4px 12px rgba(45,42,50,.08);
+    --shadow-lg: 0 8px 30px rgba(45,42,50,.12);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--slate);
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--muted-light); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── Header ── */
+  #header {
+    background: var(--card);
+    border-bottom: 2px solid var(--border);
+    padding: 16px 24px;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    font-family: 'Silkscreen', monospace;
+    font-size: 18px;
+    color: var(--pink);
+    white-space: nowrap;
+    letter-spacing: -0.5px;
+    user-select: none;
+  }
+  .logo-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--mint);
+    border-radius: 50%;
+    margin-left: 4px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .profile-select {
+    padding: 7px 12px;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--card);
+    color: var(--slate);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .profile-select:hover, .profile-select:focus { border-color: var(--pink); outline: none; }
+
+  .file-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .file-btn-hidden { display: none; }
+
+  .btn {
+    padding: 7px 16px;
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-pink { background: var(--pink); color: #fff; }
+  .btn-pink:hover:not(:disabled) { background: var(--pink-dark); }
+  .btn-mint { background: var(--mint); color: #fff; }
+  .btn-mint:hover:not(:disabled) { background: var(--mint-dark); }
+  .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--muted); color: var(--slate); }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-blue:hover:not(:disabled) { background: #6574c8; }
+  .btn-danger { background: var(--danger); color: #fff; }
+
+  .patch-badge {
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .patch-badge.has-patches { background: var(--blue-soft); color: var(--blue); }
+
+  .header-row2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  #statusMsg {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  /* ── Progress Dashboard ── */
+  #progressDash {
+    display: none;
+    padding: 12px 24px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  #progressDash.visible { display: block; }
+  .progress-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .progress-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    font-size: 12px;
+    min-width: 180px;
+    flex: 1;
+  }
+  .progress-chip-label {
+    font-weight: 700;
+    color: var(--slate);
+    white-space: nowrap;
+    min-width: 80px;
+  }
+  .progress-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+  }
+  .progress-bar-en { background: var(--mint); height: 100%; transition: width 0.3s; }
+  .progress-bar-mixed { background: var(--yellow); height: 100%; transition: width 0.3s; }
+  .progress-chip-pct {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  /* ── Filter Bar ── */
+  #filterbar {
+    padding: 12px 24px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    display: none;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  #filterbar.visible { display: flex; }
+
+  .search-box {
+    padding: 6px 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    width: 200px;
+    color: var(--slate);
+    background: var(--card);
+    transition: border-color 0.15s;
+  }
+  .search-box:focus { outline: none; border-color: var(--pink); }
+  .search-box::placeholder { color: var(--muted-light); }
+
+  .region-select {
+    padding: 6px 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--card);
+    color: var(--slate);
+    cursor: pointer;
+  }
+  .region-select:focus { outline: none; border-color: var(--pink); }
+
+  .pill {
+    padding: 5px 14px;
+    border-radius: 999px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .pill:hover { border-color: var(--muted-light); color: var(--slate); }
+  .pill.active { border-color: var(--pink); background: var(--pink-soft); color: var(--pink); }
+  .pill input { display: none; }
+
+  .filter-spacer { flex: 1; }
+
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toggle-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .toggle-switch {
+    padding: 4px 12px;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 44px;
+    text-align: center;
+  }
+  .toggle-switch.on {
+    background: var(--mint-soft);
+    border-color: var(--mint);
+    color: var(--mint-dark);
+  }
+  .toggle-switch.off {
+    background: var(--border);
+    border-color: var(--border-strong);
+    color: var(--muted);
+  }
+  #stringCount {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── Table ── */
+  #tableWrap { padding: 0 24px 24px; }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    margin-top: 16px;
+  }
+  thead th {
+    background: var(--bg);
+    text-align: left;
+    padding: 10px 14px;
+    font-family: 'Silkscreen', monospace;
+    font-size: 10px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  tbody tr.str-row {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  tbody tr.str-row:hover { background: var(--pink-soft); }
+  tbody tr.str-row.active { background: var(--blue-soft); }
+  tbody tr.str-row.patched { background: var(--mint-soft); }
+  tbody tr.str-row.patched:hover { background: #d0f0e6; }
+  tbody tr.str-row.patched.active { background: #c0eadb; }
+
+  td {
+    padding: 8px 14px;
+    vertical-align: middle;
+    font-size: 13px;
+  }
+  td.addr {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--slate);
+    white-space: nowrap;
+  }
+  td.region-col {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  td.slot-col {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  td.used-col {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  td.preview-col {
+    max-width: 340px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--slate);
+  }
+  .context-hint {
+    font-family: 'Nunito', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-weight: 600;
+  }
+
+  .badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+  }
+  .badge-EN     { background: var(--mint-soft); color: var(--mint-dark); }
+  .badge-JP     { background: var(--orange-soft); color: #c47a30; }
+  .badge-MIXED  { background: var(--yellow-soft); color: #a89020; }
+  .badge-EMPTY  { background: var(--border); color: var(--muted); }
+  .badge-SAKUJO { background: var(--border); color: var(--muted-light); }
+  .badge-P      { background: var(--blue-soft); color: var(--blue); margin-right: 4px; font-size: 10px; }
+  .badge-PRE    { background: var(--purple-soft); color: var(--purple); margin-right: 4px; font-size: 10px; }
+
+  tbody tr.str-row.sakujo { opacity: 0.35; }
+  tbody tr.str-row.sakujo:hover { opacity: 0.6; }
+
+  /* ── Edit Panel ── */
+  tr.edit-row td {
+    background: #FAFAFF;
+    border-bottom: 3px solid var(--blue);
+    padding: 0;
+  }
+  .edit-panel { padding: 20px 24px; max-width: 640px; }
+  .edit-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .edit-addr {
+    font-family: 'Silkscreen', monospace;
+    font-size: 14px;
+    color: var(--blue);
+  }
+  .edit-meta {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .edit-overflow-warn {
+    color: var(--danger);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .edit-context {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .edit-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .edit-col label {
+    display: block;
+    font-family: 'Silkscreen', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .orig-pre {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    color: var(--slate);
+    min-height: 36px;
+  }
+  .edit-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 36px;
+    outline: none;
+    color: var(--slate);
+    transition: border-color 0.15s;
+  }
+  .edit-textarea:focus { border-color: var(--blue); }
+
+  .char-counter {
+    margin-top: 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .counter-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    min-width: 90px;
+  }
+  .counter-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .counter-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.15s, background 0.15s;
+  }
+  .counter-ok   { color: var(--mint); }
+  .counter-warn { color: var(--orange); }
+  .counter-over { color: var(--danger); }
+
+  .substring-preview {
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: var(--yellow-soft);
+    border: 2px solid var(--yellow);
+    border-radius: var(--radius);
+    font-size: 12px;
+  }
+  .substring-preview-title {
+    font-family: 'Silkscreen', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--orange);
+    margin-bottom: 6px;
+  }
+  .substring-preview-row {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    margin-top: 4px;
+  }
+  .substring-label {
+    font-weight: 700;
+    color: var(--slate);
+    min-width: 90px;
+    font-size: 12px;
+  }
+  .substring-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--slate);
+    font-size: 13px;
+  }
+  .substring-value.empty {
+    color: var(--danger);
+    font-style: italic;
+  }
+  .substring-desc {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .edit-actions {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .edit-error {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--danger);
+    margin-top: 6px;
+    min-height: 18px;
+  }
+  .kbd-hint {
+    font-size: 11px;
+    color: var(--muted-light);
+    margin-left: auto;
+  }
+  kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  /* ── Save modal ── */
+  #modalOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(45,42,50,.4);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  #modalOverlay.open { display: flex; }
+  #modal {
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    width: 480px;
+    max-width: 95vw;
+    box-shadow: var(--shadow-lg);
+  }
+  #modal h2 {
+    font-family: 'Silkscreen', monospace;
+    font-size: 16px;
+    color: var(--pink);
+    margin-bottom: 16px;
+  }
+  #modal label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 6px;
+  }
+  #saveFilename {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    margin-bottom: 16px;
+    color: var(--slate);
+  }
+  #saveFilename:focus { outline: none; border-color: var(--pink); }
+  #modalActions { display: flex; gap: 8px; }
+  #modalStatus { margin-top: 12px; font-size: 13px; font-weight: 600; }
+  #modalStatus.ok  { color: var(--mint); }
+  #modalStatus.err { color: var(--danger); }
+
+  /* ── Empty state ── */
+  #emptyState {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  #emptyState .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  #emptyState strong {
+    font-family: 'Silkscreen', monospace;
+    font-size: 16px;
+    color: var(--slate);
+    display: block;
+    margin-bottom: 8px;
+  }
+  #emptyState p { font-size: 14px; }
+
+  #kbToast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--slate);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    pointer-events: none;
+    z-index: 200;
+  }
+  #kbToast.show { opacity: 1; transform: translateY(0); }
+
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeIn 0.2s ease-out; }
+
+  /* ── Tab Bar ── */
+  #tabBar {
+    display: none;
+    padding: 0 24px;
+    background: var(--card);
+    border-bottom: 2px solid var(--border);
+    gap: 4px;
+  }
+  #tabBar.visible { display: flex; }
+  .tab-btn {
+    padding: 10px 20px;
+    font-family: 'Silkscreen', monospace;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .tab-btn:hover { color: var(--slate); }
+  .tab-btn.active {
+    color: var(--pink);
+    border-bottom-color: var(--pink);
+  }
+
+  /* ── Tile Grid ── */
+  #tileWrap {
+    display: none;
+    padding: 16px 24px 24px;
+  }
+  .tile-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .tile-summary-text {
+    font-family: 'Silkscreen', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .tile-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: var(--shadow-sm);
+  }
+  .tile-card:hover {
+    border-color: var(--pink);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .tile-card.patched { border-color: var(--mint); }
+  .tile-card.patched:hover { border-color: var(--mint-dark); }
+  .tile-card.active { border-color: var(--blue); box-shadow: var(--shadow-md); }
+  .tile-card-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .tile-card-thumb canvas {
+    max-width: 100%;
+    max-height: 100%;
+    image-rendering: pixelated;
+  }
+  .tile-card-info {
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .tile-card-name {
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--slate);
+    margin-bottom: 4px;
+  }
+  .tile-card-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .badge-PATCHED { background: var(--mint-soft); color: var(--mint-dark); }
+  .badge-PENDING { background: var(--border); color: var(--muted); }
+  .badge-UNAVAIL { background: var(--danger-soft); color: var(--danger); }
+
+  /* ── Tile Expanded Panel ── */
+  .tile-expanded {
+    grid-column: 1 / -1;
+    background: var(--card);
+    border: 2px solid var(--blue);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+  }
+  .tile-expanded-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .tile-expanded-name {
+    font-family: 'Silkscreen', monospace;
+    font-size: 16px;
+    color: var(--blue);
+  }
+  .tile-expanded-meta {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .tile-sidebyside {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .tile-preview-box {
+    flex: 1;
+    min-width: 200px;
+  }
+  .tile-preview-label {
+    font-family: 'Silkscreen', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .tile-preview-canvas-wrap {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+  }
+  .tile-preview-canvas-wrap canvas,
+  .tile-preview-canvas-wrap img {
+    max-width: 100%;
+    image-rendering: pixelated;
+  }
+  .tile-preview-empty {
+    color: var(--muted-light);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .tile-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tile-file-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .tile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .tile-error {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--danger);
+    margin-top: 8px;
+    min-height: 18px;
+  }
+  .tile-status-msg {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mint);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header">
+  <div class="header-top">
+    <div class="logo">MEETS EDITOR<span class="logo-dot"></span></div>
+    <select id="romProfile" class="profile-select" onchange="onProfileChange()">
+      <option value="sanrio">Sanrio</option>
+      <option value="sweets">Sweets</option>
+    </select>
+    <span class="file-label">ROM:</span>
+    <button class="btn btn-pink" onclick="document.getElementById('romFile').click()" id="openBtn">Open ROM</button>
+    <input type="file" id="romFile" class="file-btn-hidden" accept=".bin" onchange="handleRomFile(this)">
+    <span class="file-label" id="romName" style="color:var(--slate);font-weight:600;font-size:13px;"></span>
+    <button class="btn btn-mint" onclick="downloadPatched()" id="saveBtn" disabled>Save Patched</button>
+    <span class="patch-badge" id="patchBadge">0 patches</span>
+  </div>
+  <div class="header-row2">
+    <span class="file-label">Translations:</span>
+    <button class="btn btn-ghost" onclick="document.getElementById('jsonFile').click()" id="loadJsonBtn">Load JSON</button>
+    <input type="file" id="jsonFile" class="file-btn-hidden" accept=".json" onchange="handleJsonFile(this)">
+    <button class="btn btn-blue" id="applyAllBtn" onclick="applyAllPRE()" disabled>Apply All</button>
+    <button class="btn btn-ghost" id="saveJsonBtn" onclick="downloadTranslations()" disabled>Save JSON</button>
+    <span id="statusMsg"></span>
+    <div class="toggle-wrap" style="margin-left:auto;">
+      <span class="toggle-label">Verify files</span>
+      <button class="toggle-switch on" id="verifyToggle" onclick="toggleVerify()">ON</button>
+      <input type="hidden" id="verifyFiles" value="1">
+    </div>
+  </div>
+</div>
+
+<!-- Tab Bar -->
+<div id="tabBar">
+  <button class="tab-btn active" data-tab="strings" onclick="switchTab('strings')">Strings</button>
+  <button class="tab-btn" data-tab="tiles" onclick="switchTab('tiles')">Tiles</button>
+</div>
+
+<!-- Progress Dashboard -->
+<div id="progressDash">
+  <div class="progress-grid" id="progressGrid"></div>
+</div>
+
+<!-- Filter bar -->
+<div id="filterbar">
+  <input id="searchInput" type="text" class="search-box" placeholder="Search address or text..."
+    oninput="applyFilters()">
+  <select id="regionFilter" class="region-select" onchange="applyFilters()">
+    <option value="">All Regions</option>
+  </select>
+  <label class="pill">
+    <input type="checkbox" id="jpOnly" onchange="applyFilters()"> JP Only
+  </label>
+  <label class="pill">
+    <input type="checkbox" id="translatedOnly" onchange="applyFilters()"> Translated
+  </label>
+  <label class="pill">
+    <input type="checkbox" id="showShort" onchange="applyFilters()"> Short (&lt;3)
+  </label>
+  <label class="pill">
+    <input type="checkbox" id="showSakujo" onchange="applyFilters()"> Deleted
+  </label>
+  <div class="filter-spacer"></div>
+  <span id="stringCount"></span>
+</div>
+
+<!-- Table -->
+<div id="tableWrap">
+  <div id="emptyState">
+    <div class="empty-icon">&#x1F4BE;</div>
+    <strong>No ROM loaded</strong>
+    <p>Select your .bin ROM file to get started. Then load a translations.json file.</p>
+  </div>
+  <table id="strTable" style="display:none">
+    <thead>
+      <tr>
+        <th>Address</th>
+        <th>Region</th>
+        <th>Slot</th>
+        <th>Used / Max</th>
+        <th>Preview</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<!-- Tile Editor -->
+<div id="tileWrap">
+  <div class="tile-summary">
+    <span class="tile-summary-text" id="tileSummaryText">No ROM loaded</span>
+    <button class="btn btn-mint" id="tileSaveBtn" onclick="downloadTilePatched()" disabled>Save Tiles</button>
+  </div>
+  <div class="tile-grid" id="tileGrid"></div>
+</div>
+
+<!-- Save modal -->
+<div id="modalOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div id="modal">
+    <h2>Save Patched ROM</h2>
+    <label for="saveFilename">Filename:</label>
+    <input id="saveFilename" type="text" value="patched.bin">
+    <div id="modalActions">
+      <button class="btn btn-mint" onclick="doSave()">Download</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modalOverlay').classList.remove('open')">Cancel</button>
+    </div>
+    <div id="modalStatus"></div>
+  </div>
+</div>
+
+<div id="kbToast"></div>
+
+<script>
+const CHAR_MAP = {};
+
+// Hiragana 0x01–0x2E
+'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん'
+  .split('').forEach((ch, i) => { CHAR_MAP[0x01 + i] = ch; });
+
+// Small hiragana 0x2F–0x37
+'ぁぃぅぇぉっゃゅょ'.split('').forEach((ch, i) => { CHAR_MAP[0x2F + i] = ch; });
+
+// Voiced/semi-voiced hiragana 0x38–0x50
+'がぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ'
+  .split('').forEach((ch, i) => { CHAR_MAP[0x38 + i] = ch; });
+
+// Misc Japanese/symbols 0x51–0x59
+Object.assign(CHAR_MAP, {
+  0x51: 'ー', 0x52: '~', 0x53: '…', 0x54: '、', 0x55: '。',
+  0x56: '（', 0x57: '）', 0x58: '「', 0x59: '」',
+});
+
+// Punctuation & symbols 0x5A–0x6C
+Object.assign(CHAR_MAP, {
+  0x5A: '.', 0x5B: '•', 0x5C: '!', 0x5D: '?', 0x5E: '&',
+  0x5F: '○', 0x60: '✕', 0x61: '♥', 0x62: '☀', 0x63: '★',
+  0x64: '@', 0x65: '♪', 0x67: '⤴', 0x68: '⤵',
+  0x69: '→', 0x6A: '←', 0x6B: '$', 0x6C: ' ',
+});
+
+// Digits 0x6D–0x76
+for (let i = 0; i < 10; i++) CHAR_MAP[0x6D + i] = String(i);
+
+// Katakana 0x77–0xA4
+'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン'
+  .split('').forEach((ch, i) => { CHAR_MAP[0x77 + i] = ch; });
+
+// Small katakana 0xA5–0xAD
+'ァィゥェォッャュョ'.split('').forEach((ch, i) => { CHAR_MAP[0xA5 + i] = ch; });
+
+// Voiced/semi-voiced katakana 0xAE–0xC7
+'ガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポヴ'
+  .split('').forEach((ch, i) => { CHAR_MAP[0xAE + i] = ch; });
+
+// Latin A–Z 0xE0–0xF9
+for (let i = 0; i < 26; i++) CHAR_MAP[0xE0 + i] = String.fromCharCode(65 + i);
+
+// Extra punctuation 0xFA–0xFE
+Object.assign(CHAR_MAP, {
+  0xFA: '%', 0xFB: '-', 0xFC: '+', 0xFD: '—', 0xFE: '↩',
+});
+
+// Reverse encode map (char -> byte)
+// Build reverse encode map from CHAR_MAP (supports all characters including JP)
+const ENCODE_MAP = {};
+for (const [code, ch] of Object.entries(CHAR_MAP)) {
+  ENCODE_MAP[ch] = Number(code);
+}
+ENCODE_MAP['\n'] = 0xFF;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TITLE SCREEN CREDIT
+// FYI: You're an asshole if you remove this. I'm looking at you, Matt.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const TITLE_CREDIT_ADDR = 4571200;
+const TITLE_CREDIT_NCOLORS = 10;
+const TITLE_CREDIT_HEADER_SIZE = 4 + TITLE_CREDIT_NCOLORS * 2; // 24
+const TITLE_CREDIT_PIXEL_START = TITLE_CREDIT_ADDR + TITLE_CREDIT_HEADER_SIZE + 2; // 4571226
+const TITLE_CREDIT_PIXELS_B64 = 'EREiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIhIREREhMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMjERERMkRERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERENBIRIUMUEREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREUEjESFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMRERFhZmZmZhYREYGIiIiIGBERUVVVVVUVERGRmZmZmRkRETEzMzMzExERYWZmZmYWERGBiIiIiBgREREjFCFDERERYWZmZmYWERGBiIiIiBgREVFVVVVVFRERkZmZmZkZERExMzMzMxMREWFmZmZmFhERgYiIiIgYERERIxQhQxERYRYRERERYRaBGIGIiBiBGFFVFRERUVUVkRmRmZmZmRkxExERERExE2FmFhEREWEWgRiBiIgYgRgRESMUIUMREWEWEREREWEWgRgRiIgYgRhRVRERERFVFZEZkZmZmZkZMRMRERERMRNhZhERERFhFoEYgYiIGIEYEREjFCFDERFhFmFmZmZmFoEYEYGIGIEYURVRVVVVVRWRGZGZmZmZGTEzMxMxMzMTYRZhZmZmZhaBGIGIiBiBGBERIxQhQxERYRZhZmZmZhaBGIERiBiBGFEVUVVVVVUVkRmRmZmZmRkxMzMTMTMzE2FmERERYWYWgRiBiIgYgRgRESMUIUMREWEWERERYWYWgRiBGIEYgRhRFVFVERFRFZEZkZmZmZkZMTMzEzEzMxNhZhYRERFmFoEYEREREYEYEREjFCFDERFhFhEREWFmFoEYgYgRGIEYURVRVRERURWRGZGZmZmZGTEzMxMxMzMTYWZmZmYWYRaBGBERERGBGBERIxQhQxERYRZhZmZmZhaBGIGIGBGBGFEVUVVVFVEVkRmRmZmZmRkxMzMTMTMzE2FmZmZmFmEWgRiBiIgYgRgRESMUIUMREWEWYWZmZmYWgRiBiIgRgRhRFVFVVRVRFZEZkZmZmZkZMTMzEzEzMxNhZmZmZhZhFoEYgYiIGIEYEREjFCFDERFhFhERERFhFoEYgYiIGIEYUVURERERVRWRGRERERGRGTETERERETETYRYRERERZhaBGIGIiBiBGBERIxQhQxERYRYRERERYRaBGIGIiBiBGFFVFRERUVUVkRkRERERkRkxExERERExE2EWERERYWYWgRiBiIgYgRgRESMUIUMRERFhZmZmZhYREYGIiIiIGBERUVVVVVUVERGRmZmZmRkRETEzMzMzExERYWZmZmYWERGBiIiIiBgREREjFCFDERERYWZmZmYWERGBiIiIiBgREVFVVVVVFRERkZmZmZkZERExMzMzMxMREWFmZmZmFhERgYiIiIgYERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERFRVVVVVRUREZGZmZmZGRERgYiIiIgYERFhZmZmZhYRETEzMzMzExERERERERERERERIxQhQxERERERERERERERUVVVVVUVERGRmZmZmRkREYGIiIiIGBERYWZmZmYWERExMzMzMxMRERERERERERERESMUIUMRERERERERERERURURERFRVRWRmRkREZGZGYEYEREREYEYYWYWERFhZhYxEzEzMxMxExEREREREREREREjFCFDEREREREREREREVEVEREREVUVkZkRERERmRmBGBERERGBGGFmEREREWYWMRMxMzMTMRMRERERERERERERIxQhQxERERERERERERFRFVFVVRVRFZEZkZmZGZEZgYiIGIGIiBhhFmFmZhZhFjETMTMzEzETERERERERERERESMUIUMRERERERERERERURVRVVUVURWRGZGZmRmRGYGIiBiBiIgYYRZhZmZmZhYxEzEzMxMxExEREREREREREREjFCFDEREREREREREREVEVEREREVUVkRkRERERkRmBiIgYgYiIGGEWYWZmZmYWMRMRERERMRMRERERERERERERIxQhQxERERERERERERFRFREREVFVFZEZEREREZEZgYiIGIGIiBhhFmFmZmZmFjETERERETETERERERERERERESMUIUMRERERERERERERURVRVVVVVRWRGZGZmRmRGYGIiBiBiIgYYRZhZmZmZhYxEzEzMxMxExEREREREREREREjFCFDEREREREREREREVEVUVVVVVUVkRmRmZkZkRmBiIgYgYiIGGEWYWZmFmEWMRMxMzMTMRMRERERERERERERIxQhQxERERERERERERFRFVFVVVVVFZEZkZmZGZEZgYiIGIGIiBhhZhERERFmFjETMTMzEzETERERERERERERESMUIUMRERERERERERERURVRVVVVVRWRGZGZmRmRGYGIiBiBiIgYYWYWERFhZhYxEzEzMxMxExEREREREREREREjFCFDERERERERERERERFRVVVVVRUREZGZmZmZGRERgYiIiIgYERFhZmZmZhYRETEzMzMzExERERERERERERERIxQhQxERERERERERERERUVVVVVUVERGRmZmZmRkREYGIiIiIGBERYWZmZmYWERExMzMzMxMRERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERFRVVVVFRERERERERFhZmYRcXd3EYGIiBFRVVURkZmZEWFmZhFxd3cRERERERERESMUIUMRERERERERERERERFVVVVVVVFVERERERERFhFhFncRcReIEYEYVRFRFRkRERlmEWEWF3d3FxEREREREREjFCFDERERERERERERERFVVVVVVRUREVUREREREWZhFhZ3F3cXGIiIGFUVVRWZGZkZFmYWFhd3dxcRERERERERIxQhQxERERERERERERFRVVVVVVVVFRERFRERERFmYRYWdxd3FxiIERhVFVUVmRmZGRZmFhYXd3cXERERERERESMUIUMRERERERERERERVVVVVVVVVVUVEVERERERZmEWFncXdxcYiBgYVRVVFZkZmRkWEREWF3d3FxEREREREREjFCFDERERERERERERURURVVUVVVVRVRVRFRERERYRYRZ3EXEXiBGBGFURURWZGZkZFmYWFhcRERcRERERERERIxQhQxEREREREREREVURUVVVEVUVEVUVEVURERFhZmYRcXd3EYGIiBFRVVURkZmZEWFmZhFxd3cRERERERERESMUIUMREREREREREVEVEVEVVVVVVRFRURFRFREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERFRFRFVERFVVRUREVEVERURERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERVRUREREREVEVERFVFRFVERGBiIgRUVVVEZGZmRFhZmYRcXd3EYGIiBFRVVURERERERERESMUIUMREREREREREVURERERERERFVVVVRURURERGBERGBURURWZEZEZFhERFhd3FxcYEYEYVRERFREREREREREjFCFDEREREREREREVERERERERVVVVVVUVEVEREYiBiBgVVRUVmRmZGRZmZhYXcRcXiIEYGBVVVRURERERERERIxQhQxERERERERFRFRFVERERVVVVVVVVVRFRFRGIEREYFRERFZkZmRkWEWEWFxcXF4iBGBhVEVEVERERERERESMUIUMRERERERERURFRFREREVUVVVVVVVUVERURiIGIGBVVURWZGZkZFmZmFhd3EReIgRgYVVUVFREREREREREjFCFDEREREREREVERVRVREVFVUVVVVVVVVREVEYiBiBgVVREVmRGRGRYRERYXdxcXGBGBGBURURURERERERERIxQhQxERERERERFRURVVVVFVFVFVVVVVVVURFRGBiIgRUVVVEZGZmRFhZmYRcXd3EYGIiBFRVVURERERERERESMUIUMRERERERERUVFRVVVVVVFVVVVVVVVVERUREREREREREREREREREREREREREREREREREREREREREREREREjFCFDEREREREREVFVVVVVUVVVVVVVVVVVVVEVERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERFRVVVVVRFVVVVVVVVVVVVRFRGRmZkRYWZmERERERFxd3cRgYiIEVFVVRERERERERERERERESMUIUMRERERERERUVVVVVVVFVVVVVVVVVUVURURmRGRGRYRERYRERERFxERFxiIGBgVEREVEREREREREREREREjFCFDERERERERERFVVVVVVVVVUVVVVVVVFVURERmZGRlmYWYWEREREXcXdxcYiBgYFVVVFRERERERERERERERIxQhQxERERERERERVVVVVVVVVRVRVVVVVRVVEREZmRkZZhERFhERERF3F3cXGBERGBURURURERERERERERERESMUIUMREREREREREVVVVVVVVVVVVVVVVVURVRERGZkZGWZhZhYRERERdxd3FxiIGBgVVVUVEREREREREREREREjFCFDERERERERERFRVVVVVVVRFVVVVVVVURUREZkRkRlmYWYWEREREXcXdxcYiBgYFRERFRERERERERERERERIxQhQxERERERERERUVVVVVUVERFRFVVVVVEVERGRmZkRYWZmERERERFxd3cRgYiIEVFVVRERERERERERERERESMUIUMRERERERERERFVVVVVFRERUVFVVRVVEREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERUVVVVVVVFVVRVVVRFRERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERFVVVVVVVVVVVUVVRERERGRmZkRYWZmEXF3dxGBiIgRUVVVERERERERERERERERERERESMUIUMRERERERERERERUVVVVVVVVVVVVRURERERGRkZGWYRYRYXEXEXGIiIGBURURUREREREREREREREREREREjFCFDERERERERERERERFVVRURVVVVVVURERERERkZGRkWZhYWF3cXFxiIiBhVURUVERERERERERERERERERERIxQhQxEREREREREREREREVVVERERVVUREREREREZGRkZFmYWFhcRERcYiIgYVVEVFRERERERERERERERERERESMUIUMRERERERERERERERERUVVVVRURERERERERGRkZGRZmFhYXd3EXGIiIGFVRFRUREREREREREREREREREREjFCFDEREREREREREREREREREREREREREREREREZmRkRlmEWEWF3cRFxgRERgVEVEVERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERGRmZkRYWZmEXF3dxGBiIgRUVVVERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREUEURBlBFJFERBFBRBFBRBRBRBREREQRRERBFEGZREQZERFBFBFEkUQRQUQUEREjFCFDERERERERERERERERERFBlEQZSRSRFEEUQUQRRBEURBFEEUkRQRRBQRRBGUEUERERQRQRREFEEUkRFBERIxQhQxERERERERERERERERERQUREGUREkRSRFEFBERQREUQRRBFJEUEREUEUQRlBFBEREUEUFJRBRBFJERERESMUIUMREREREREREREREREREUFERBmUSZEUQRREQREUERGUEUQRSRFJERFBFEEZQRQRERGRlJSUQUEUQUQREREjFCFDERERERERERERERERERFBSUQZFEGRREQRREEUFEmUlBFEEUkRSRERQUREGUEUERERkUREFERBFBFEFBERIxQhQxERERERERERERERERERQRlBSUREmRREEUREFBQRlEQRRBFJEUEREUEUQRlBFBERERFERBRERBQREUQRESMUIUMREREREREREREREREREUEZQUkUQZQUQRQUERREEZREEUQRSRFBFBFBFEEZQRQRERERREEUlBGUGRFEEREjFCFDERERERERERERERERERFBGUFJGUGUFEFEFBGUQUQUQUQUEUkREUREQRRBmUREGREREURBFBQRREREFBERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxEREREREREREREREREREREREREREREREREREREREREREREREREREUQRERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREUREEREREREREREREREREREREREREREjFCFDEREREREREREREREREREREREREREREREREREREREREREREREREUEUQRERERERkRRBFERElEREFERERBERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERREREFERBFBEREZEUQRSUERFEkRREERERESMUIUMRERERERERERERERERERERERERERERERERERERERERQURERBQRQRQURBERERGRFEEUlBERRBGURBEREREjFCFDEREREREREREREREREREREREREREREREREREREREREUEUERQRERFERBQRERERkRRBFJQREUSRFEQRERERIxQhQxERERERERERERERERERERERERERERERERERERERERERREEUEUERQUQREREREZFERBRERBlERBRERBQRESMUIUMREREREREREREREREREREREREREREREREREREREREREUFEERQREREUERERERGRFEEUlBERREEURBEREREjFCFDERERERERERERERERERERERERERERERERERERERERERERRBERERERFBERERERkRRBFJQREURBFEQRERERIxQhQxEREREREREREREREREREREREREREREREREREREREREREUEREREREURERBEREZEUQRRERJREEUREREQRESMUIUMRERERERERERERERERERERERERERERERERERERERERERFBFBEREUEUEREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERFBREQRERFEERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERFBRBFBFBFEFBERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREUREFBEREREREREREREREREREREREREREREjFCFDEREREREREREREREREREREREREREREREREREREREREREREUEUERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERFBERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFCFDERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERIxQhQxERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERESMUIUMREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREjFBEyFBERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERExQhQRITMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzI0QREREiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIkIUERERQUREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREERE=';
+
+function applyTitleCredit() {
+  if (!romData || romData.length < TITLE_CREDIT_PIXEL_START + 8192) return;
+  const raw = atob(TITLE_CREDIT_PIXELS_B64);
+  const pixels = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) pixels[i] = raw.charCodeAt(i);
+  romData.set(pixels, TITLE_CREDIT_PIXEL_START);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TILE REGISTRY
+// ══════════════════════════════════════════════════════════════════════════════
+
+const TILE_REGISTRY = [
+  {
+    name: "PLEASE WAIT",
+    address: 4530064,
+    width: 128, height: 128,
+    ncolors: 6,
+    metadata: [0x60, 0x00],
+    deviceColors: {
+      0: null,
+      1: [222,255,181],
+      2: [255,255,255],
+      3: [255,231,181],
+      4: [255,255,181],
+      5: [0,0,99],
+    },
+  },
+  {
+    name: "Status Screen",
+    address: 4726932,
+    width: 128, height: 128,
+    ncolors: 14,
+    metadata: [0x07, 0xFF],
+    deviceColors: {
+      0: null,
+      1: [255,255,255],
+      2: [255,0,0],
+      3: [255,186,16],
+      4: [140,142,140],
+      5: [0,0,99],
+      6: null,   // read from ROM
+      7: [132,206,132],
+      8: [189,247,181],
+      9: null,   // read from ROM
+      10: [255,255,165],
+      11: [230,227,0],
+      12: [206,202,41],
+      13: null,  // read from ROM
+    },
+  },
+  {
+    name: "YOUR BIRTHDAY",
+    address: 4562988,
+    width: 128, height: 128,
+    ncolors: 6,
+    metadata: [0x60, 0x00],
+    deviceColors: {
+      0: null,
+      1: [255,255,255],
+      2: [255,0,0],
+      3: [255,186,16],
+      4: [140,142,140],
+      5: [0,0,99],
+    },
+  },
+  // Title Screen (4571200) is not in the grid — it's auto-applied as
+  // the creator credit on every save via applyTitleCredit().
+  {
+    name: "EXCELLENT",
+    address: 4365956,
+    width: 64, height: 20,
+    ncolors: 3,
+    metadata: [0x00, 0x1F],
+    deviceColors: {
+      0: [0,255,0],
+      1: [255,255,255],
+      2: [255,0,0],
+    },
+  },
+  {
+    name: "GREAT",
+    address: 4366608,
+    width: 64, height: 20,
+    ncolors: 3,
+    metadata: [0x03, 0x3F],
+    deviceColors: {
+      0: [0,255,0],
+      1: [255,255,255],
+      2: [255,101,0],
+    },
+  },
+  {
+    name: "GOOD",
+    address: 4367260,
+    width: 64, height: 20,
+    ncolors: 3,
+    metadata: [0x05, 0xA0],
+    deviceColors: {
+      0: [0,255,0],
+      1: [255,255,255],
+      2: [0,182,0],
+    },
+  },
+  {
+    name: "OK",
+    address: 4367912,
+    width: 64, height: 20,
+    ncolors: 6,
+    metadata: [0xFF, 0xF4],
+    deviceColors: {
+      0: [0,255,0],
+      1: [255,255,255],
+      2: [0,0,255],
+      3: [99,190,247],
+      4: [0,0,0],
+      5: [165,255,255],
+    },
+  },
+  {
+    name: "READY",
+    address: 4373220,
+    width: 64, height: 43,
+    ncolors: 16,
+    metadata: [0x3F, 0x3F],
+    deviceColors: {
+      0: [0,255,0],
+      1: [255,255,255],
+      2: [99,0,206],
+      3: [0,0,99],
+      4: [148,227,148],
+      5: [239,170,230],
+      6: [255,166,0],
+      7: [206,101,255],
+      8: [222,223,222],
+      9: [255,210,247],
+      10: [255,150,173],
+      11: [255,255,173],
+      12: [255,239,0],
+      13: [230,0,0],
+      14: [66,227,66],
+      15: [255,231,58],
+    },
+  },
+  {
+    name: "CONGRATS",
+    address: 4368572,
+    width: 128, height: 72,
+    ncolors: 16,
+    metadata: [0xF0, 0xFA],
+    deviceColors: {
+      0: [0,255,0],
+      1: [0,0,99],
+      2: [230,227,0],
+      3: [255,255,115],
+      4: [255,255,197],
+      5: [230,0,0],
+      6: [255,166,0],
+      7: [255,57,58],
+      8: [255,206,16],
+      9: [255,255,255],
+      10: [255,113,115],
+      11: [58,227,58],
+      12: [66,235,247],
+      13: [140,255,140],
+      14: [222,105,255],
+      15: [214,28,247],
+    },
+  },
+  {
+    name: "LOW BATTERY",
+    address: 4579420,
+    width: 128, height: 128,
+    ncolors: 13,
+    metadata: [0xD5, 0xE9],
+    deviceColors: {
+      0: null,
+      1: [255,255,255],
+      2: [255,0,0],
+      3: [255,186,16],
+      4: [140,142,140],
+      5: [0,0,99],
+      6: [255,162,206],
+      7: [255,130,173],
+      8: [255,255,0],
+      9: [247,202,0],
+      10: [255,227,0],
+      11: [255,223,222],
+      12: [74,190,214],
+    },
+  },
+  {
+    name: "GO",
+    address: 4374636,
+    width: 110, height: 74,
+    ncolors: 16,
+    metadata: [0x47, 0x5F],
+    deviceColors: {
+      0: [0,255,0],
+      1: [255,162,0],
+      2: [255,219,8],
+      3: [255,255,255],
+      4: [255,0,0],
+      5: [0,0,99],
+      6: [222,223,222],
+      7: [148,227,148],
+      8: [66,227,66],
+      9: [255,206,214],
+      10: [255,162,165],
+      11: [255,97,49],
+      12: [239,170,230],
+      13: [206,101,255],
+      14: [255,255,173],
+      15: [255,235,66],
+    },
+  },
+  {
+    name: "Parents' Map",
+    address: 5431038,
+    width: 128, height: 128,
+    ncolors: 13,
+    metadata: [0xF9, 0x83],
+    deviceColors: {
+      0: [0,255,0],
+      1: [0,0,99],
+      2: [255,255,230],
+      3: [247,239,197],
+      4: [255,243,197],
+      5: [255,247,214],
+      6: [255,40,41],
+      7: [128,128,128],
+      8: [33,32,33],
+      9: [230,0,0],
+      10: [58,57,58],
+      11: [255,255,239],
+      12: [25,49,255],
+    },
+  },
+  {
+    name: "Birthday Labels",
+    address: 3773784,
+    width: 0, height: 0,   // read from ROM
+    ncolors: 0,
+    metadata: null,
+    deviceColors: null,
+    unavailable: true,      // no EN replacement yet
+  },
+];
+
+// Build lookup by address
+const TILE_BY_ADDR = {};
+for (const t of TILE_REGISTRY) TILE_BY_ADDR[t.address] = t;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TILE STATE
+// ══════════════════════════════════════════════════════════════════════════════
+
+let tilePatches = {};    // address → { original: Uint8Array }
+let activeTile = null;   // address of expanded tile, or null
+let tileUploadedFile = null;  // File object for the current upload
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STRING ENCODING (original code continues below)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function decodeByte(xx) {
+  if (xx === 0xFF) return '\n';
+  if (CHAR_MAP[xx]) return CHAR_MAP[xx];
+  return '[' + xx.toString(16).toUpperCase().padStart(2, '0') + ']';
+}
+
+function decodeString(rom, offset) {
+  const chars = [];
+  let i = offset;
+  let count = 0;
+  while (i < rom.length - 1) {
+    const b0 = rom[i], b1 = rom[i + 1];
+    if (b0 === 0x04 && b1 !== 0x00) {
+      chars.push(decodeByte(b1));
+      count++;
+      i += 2;
+    } else if (b0 === 0x00 && b1 === 0x00) {
+      i += 2;
+      break;
+    } else {
+      break;
+    }
+  }
+  return { decoded: chars.join(''), length: count, endOffset: i };
+}
+
+function encodeText(text) {
+  text = text.toUpperCase();
+  const encoded = [];
+  const errors = [];
+  let charCount = 0;
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '[' && i + 4 <= text.length && text[i + 3] === ']') {
+      const hex = text.slice(i + 1, i + 3);
+      if (/^[0-9A-Fa-f]{2}$/.test(hex)) {
+        const code = parseInt(hex, 16);
+        if (code >= 0x01 && code <= 0xFE) {
+          encoded.push(0x04, code);
+          charCount++;
+          i += 4;
+          continue;
+        } else {
+          errors.push(`Invalid code [${hex}]`);
+          i++;
+          continue;
+        }
+      }
+    }
+    if (ENCODE_MAP[ch] !== undefined) {
+      encoded.push(0x04, ENCODE_MAP[ch]);
+      charCount++;
+    } else {
+      errors.push(`Invalid character '${ch}' at position ${i}`);
+    }
+    i++;
+  }
+  return { encoded: new Uint8Array(encoded), charCount, errors };
+}
+
+function detectSlot(rom, addr, charCount) {
+  const termEnd = addr + charCount * 2 + 2;
+  let pos = termEnd;
+  while (pos < rom.length && rom[pos] === 0x00) pos++;
+  const trailing = pos - termEnd;
+  const slotBytes = (charCount * 2 + 2) + trailing;
+  const maxChars = Math.floor((slotBytes - 2) / 2);
+  return { slotBytes, maxChars };
+}
+
+function classifyStatus(decoded) {
+  if (decoded.startsWith('さくじょ')) return 'SAKUJO';
+  const stripped = decoded.replace(/\[[0-9A-Fa-f]{2}\]/g, '').replace(/[\n ]/g, '');
+  if (!stripped) return 'EMPTY';
+  const hasLatin = /[A-Z]/.test(stripped);
+  const hasJP = /[\u3040-\u309F\u30A0-\u30FF]/.test(stripped);
+  if (hasJP && hasLatin) return 'MIXED';
+  if (hasJP) return 'JP';
+  if (hasLatin) return 'EN';
+  return 'EMPTY';
+}
+
+function extractRegion(rom, start, end) {
+  const results = [];
+  let i = start;
+  while (i < end - 1) {
+    if (rom[i] === 0x04 && rom[i + 1] !== 0x00) {
+      const { decoded, length, endOffset } = decodeString(rom, i);
+      if (length > 0) {
+        results.push({ address: i, decoded, length });
+      }
+      i = endOffset;
+    } else {
+      i++;
+    }
+  }
+  return results;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ROM PROFILES
+// ══════════════════════════════════════════════════════════════════════════════
+
+const MAX_ROM_BYTES = 8192 * 1024; // 8,388,608
+
+const ROM_PROFILES = {
+  sanrio: {
+    label: 'Sanrio',
+    regions: [
+      ['Hotel/Travel NPC',    0x1ACD74, 0x1AFFFF],
+      ['UI menus & labels',   0x1B0000, 0x1BBFFF],
+      ['Navigation menus',    0x1BC000, 0x1BFFFF],
+      ['Character dialogue',  0x1C0000, 0x1CFFFF],
+      ['System menus',        0x1D0000, 0x1DFFFF],
+      ['Sanrio dialogue',     0x1E0000, 0x1FD4C3],
+      ['Sanrio items & shop', 0x4E0000, 0x55FFFF],
+    ],
+  },
+  sweets: {
+    label: 'Sweets',
+    regions: [
+      ['UI menus & labels',      0x1B0000, 0x1BBFFF],
+      ['Navigation menus',       0x1BC000, 0x1BFFFF],
+      ['Character dialogue',     0x1C0000, 0x1CFFFF],
+      ['Sweets Town dialogue',   0x1D0000, 0x1DFFFF],
+      ['Sweets items & shop',    0x4F0000, 0x55FFFF],
+    ],
+  },
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// APP STATE
+// ══════════════════════════════════════════════════════════════════════════════
+
+const LINE_MAX = 12;      // max chars per line on the screen
+
+// Known substring pointer relationships: another menu reads from charOffset onward.
+// Format: { addr: hex string, charOffset: 1-based start, label: what the substring is used for }
+const SUBSTRING_RULES = [
+  { addr: '0x001B6540', charOffset: 5, label: 'Cafe submenu label' },        // CINNCAFE → CAFE
+  { addr: '0x001B40F4', charOffset: 5, label: 'Password label' },            // GOOD PASS → PASS
+  { addr: '0x001B65D8', charOffset: 5, label: 'CINNCAFE snack label' },      // PAL NOM → NOM
+  { addr: '0x001B65F4', charOffset: 5, label: 'CINNCAFE food label' },       // PAL EAT → EAT
+  { addr: '0x001BDEE8', charOffset: 5, label: 'Park name' },                 // BUD☀ PARK → PARK
+  { addr: '0x001D0DB8', charOffset: 5, label: 'Item discard label' },        // けしますREM → REM
+  { addr: '0x001D3428', charOffset: 5, label: 'Departure label (6 ptrs)' },  // GOODBYE → BYE
+  { addr: '0x001D1F0C', charOffset: 5, label: 'Settings SET label' },        // DIM  SET → SET
+  { addr: '0x001D20FC', charOffset: 3, label: 'Area name (7 ptrs)' },        // BERRIES → RRIES
+  { addr: '0x001D2B04', charOffset: 3, label: 'Status label (3 ptrs)' },     // NOT YET → T YET
+  { addr: '0x001D3444', charOffset: 3, label: 'Visit label (2 ptrs)' },      // VISIT → SIT
+  { addr: '0x001B2518', charOffset: 2, label: 'Marriage confirm' },           // MARRY? → ARRY?
+  { addr: '0x001BE4CC', charOffset: 2, label: 'Marriage flow' },              // MARRY → ARRY
+  { addr: '0x001BB838', charOffset: 3, label: 'Chest submenu' },             // CHEST → EST
+  { addr: '0x001BE5B0', charOffset: 3, label: 'Magical Park' },              // PARK → RK
+  { addr: '0x001BE630', charOffset: 3, label: 'Cloud Shop' },                // CLOUD → OUD
+  { addr: '0x001D350C', charOffset: 3, label: 'Download twin' },             // D-TWIN → TWIN
+  { addr: '0x001D3520', charOffset: 3, label: 'Download data' },             // D-DATA → DATA
+  { addr: '0x001D3548', charOffset: 3, label: 'Download progress' },         // D-PROG → PROG
+  { addr: '0x001B65A4', charOffset: 5, label: 'Cafe food label (broken)' },  // MEAL → empty
+];
+
+// Build lookup: addr_hex -> rule
+const SUBSTRING_BY_ADDR = {};
+for (const rule of SUBSTRING_RULES) SUBSTRING_BY_ADDR[rule.addr] = rule;
+
+let romData = null;       // Uint8Array of full ROM
+let romFileName = '';
+let allStrings = [];
+let stringByHex = {};     // address_hex -> string object (O(1) lookup)
+let filtered = [];
+let patches = {};         // addr(int) -> { original, patched, newText, charCount }
+let translations = {};    // addr(int) -> { text, context }
+let rawJsonData = {};     // full translations.json content (preserves TODO entries)
+let jsonFileName = 'translations.json';
+let patchCount = 0;
+let sakujoCount = 0;      // cached at load time
+let activeAddr = null;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FILE HANDLING
+// ══════════════════════════════════════════════════════════════════════════════
+
+function handleRomFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  romFileName = file.name;
+  const btn = document.getElementById('openBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    if (data.length > MAX_ROM_BYTES) {
+      setStatus(`ROM too large: ${data.length} bytes (max ${MAX_ROM_BYTES})`, true);
+      btn.disabled = false;
+      btn.innerHTML = 'Open ROM';
+      return;
+    }
+    const profile = document.getElementById('romProfile').value;
+    if (document.getElementById('verifyFiles').value === '1') {
+      const nameLower = romFileName.toLowerCase();
+      if (profile === 'sanrio' && !nameLower.includes('sanrio')) {
+        setStatus(`Profile is Sanrio but ROM filename "${romFileName}" doesn't contain "sanrio". Switch profile or pick the correct ROM.`, true);
+        btn.disabled = false;
+        btn.innerHTML = 'Open ROM';
+        return;
+      }
+      if (profile === 'sweets' && !nameLower.includes('sweets')) {
+        setStatus(`Profile is Sweets but ROM filename "${romFileName}" doesn't contain "sweets". Switch profile or pick the correct ROM.`, true);
+        btn.disabled = false;
+        btn.innerHTML = 'Open ROM';
+        return;
+      }
+    }
+    romData = data;
+    document.getElementById('romName').textContent = romFileName;
+    loadRom();
+    btn.disabled = false;
+    btn.innerHTML = 'Open ROM';
+  };
+  reader.onerror = function() {
+    setStatus('Failed to read ROM file', true);
+    btn.disabled = false;
+    btn.innerHTML = 'Open ROM';
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+function loadRom() {
+  const profile = document.getElementById('romProfile').value;
+  const regions = ROM_PROFILES[profile].regions;
+  patches = {};
+  allStrings = [];
+  let idx = 1;
+
+  for (const [regionName, start, end] of regions) {
+    const records = extractRegion(romData, start, end);
+    for (const r of records) {
+      const { slotBytes, maxChars } = detectSlot(romData, r.address, r.length);
+      const status = classifyStatus(r.decoded);
+      allStrings.push({
+        index: idx++,
+        address: r.address,
+        address_hex: '0x' + r.address.toString(16).toUpperCase().padStart(8, '0'),
+        region: regionName,
+        decoded: r.decoded,
+        original_decoded: r.decoded,
+        length: r.length,
+        slot_bytes: slotBytes,
+        max_chars: maxChars,
+        status: status,
+        patched: false,
+        pre_translated_text: null,
+        overflow: false,
+        context: '',
+      });
+    }
+  }
+
+  // Build O(1) lookup index
+  stringByHex = {};
+  for (const s of allStrings) stringByHex[s.address_hex] = s;
+  sakujoCount = allStrings.filter(s => s.status === 'SAKUJO').length;
+
+  // Merge any already-loaded translations
+  mergeTranslations();
+
+  patchCount = 0;
+  updatePatchBadge();
+  buildRegionDropdown();
+  applyFilters();
+  updateProgress();
+  document.getElementById('filterbar').classList.add('visible');
+  document.getElementById('progressDash').classList.add('visible');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('strTable').style.display = '';
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('tabBar').classList.add('visible');
+  initTileRegistry();
+  tilePatches = {};
+  activeTile = null;
+  setStatus(`Loaded ${allStrings.length} strings from ${romFileName}`, false);
+}
+
+function handleJsonFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (document.getElementById('verifyFiles').value === '1') {
+    const profile = document.getElementById('romProfile').value;
+    const nameLower = file.name.toLowerCase();
+    if (profile === 'sanrio' && nameLower.includes('sweets')) {
+      setStatus(`Profile is Sanrio but JSON filename "${file.name}" looks like a Sweets file. Switch profile or pick the correct JSON.`, true);
+      input.value = '';
+      return;
+    }
+    if (profile === 'sweets' && !nameLower.includes('sweets')) {
+      setStatus(`Profile is Sweets but JSON filename "${file.name}" doesn't contain "sweets". Switch profile or pick the correct JSON.`, true);
+      input.value = '';
+      return;
+    }
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      rawJsonData = data;
+      jsonFileName = file.name;
+      translations = {};
+      let loaded = 0;
+      for (const [addrStr, value] of Object.entries(data)) {
+        let text, context;
+        if (typeof value === 'object' && value !== null) {
+          text = value.t || '';
+          context = value.c || '';
+        } else if (typeof value === 'string') {
+          text = value;
+          context = '';
+        } else {
+          continue;
+        }
+        if (text.startsWith('TODO:')) continue;
+        const addr = parseInt(addrStr, 16);
+        if (isNaN(addr)) continue;
+        translations[addr] = { text, context };
+        loaded++;
+      }
+      mergeTranslations();
+      applyFilters();
+      updateProgress();
+      document.getElementById('applyAllBtn').disabled = loaded === 0;
+      document.getElementById('saveJsonBtn').disabled = false;
+      setStatus(`${loaded} translations loaded from ${file.name}`, false);
+    } catch (err) {
+      setStatus('JSON parse error: ' + err.message, true);
+    }
+  };
+  reader.onerror = function() {
+    setStatus('Failed to read JSON file', true);
+  };
+  reader.readAsText(file, 'utf-8');
+  input.value = '';
+}
+
+function mergeTranslations() {
+  for (const s of allStrings) {
+    const t = translations[s.address];
+    if (t) {
+      if (!s.patched) {
+        s.pre_translated_text = t.text;
+        // Check overflow
+        const { charCount } = encodeText(t.text);
+        s.overflow = charCount > s.max_chars;
+      }
+      s.context = t.context || '';
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// APPLY ALL
+// ══════════════════════════════════════════════════════════════════════════════
+
+function commitPatch(s, encoded, charCount, text) {
+  const upper = text.toUpperCase();
+  const padded = new Uint8Array(s.slot_bytes);
+  padded.set(encoded, 0);
+
+  if (!patches[s.address]) {
+    patches[s.address] = { original: romData.slice(s.address, s.address + s.slot_bytes) };
+  }
+  patches[s.address].patched = padded;
+  patches[s.address].newText = upper;
+  patches[s.address].charCount = charCount;
+
+  romData.set(padded, s.address);
+  s.patched = true;
+  s.decoded = upper;
+  s.length = charCount;
+  s.status = classifyStatus(upper);
+
+  // Update translations JSON in memory
+  const addrKey = s.address_hex;
+  const existing = rawJsonData[addrKey];
+  const ctx = (existing && typeof existing === 'object') ? (existing.c || '') : '';
+  rawJsonData[addrKey] = { t: upper, c: s.context || ctx };
+}
+
+function applyAllPRE() {
+  let applied = 0, overflow = 0;
+  for (const s of allStrings) {
+    if (s.patched || !s.pre_translated_text) continue;
+    if (s.overflow) { overflow++; continue; }
+    const { encoded, charCount, errors } = encodeText(s.pre_translated_text);
+    if (errors.length > 0 || charCount > s.max_chars) { overflow++; continue; }
+    commitPatch(s, encoded, charCount, s.pre_translated_text);
+    applied++;
+  }
+
+  patchCount = Object.keys(patches).length;
+  updatePatchBadge();
+  applyFilters();
+  updateProgress();
+  document.getElementById('applyAllBtn').disabled = true;
+  let msg = `${applied} applied`;
+  if (overflow) msg += `, ${overflow} skipped (overflow)`;
+  setStatus(msg, false);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PATCH / REVERT
+// ══════════════════════════════════════════════════════════════════════════════
+
+function applyPatch(addrHex, maxChars) {
+  const ta = document.getElementById(`ta_${addrHex}`);
+  const err = document.getElementById(`err_${addrHex}`);
+  const text = ta.value;
+
+  const { encoded, charCount, errors } = encodeText(text);
+  if (errors.length > 0) { err.textContent = errors[0]; return; }
+  if (charCount > maxChars) { err.textContent = `Too long by ${charCount - maxChars} char(s)`; return; }
+
+  const s = stringByHex[addrHex];
+  if (!s) return;
+
+  commitPatch(s, encoded, charCount, text);
+  patchCount = Object.keys(patches).length;
+  updatePatchBadge();
+  updateProgress();
+  closeEdit();
+}
+
+function revertPatch(addrHex) {
+  const s = stringByHex[addrHex];
+  if (!s) return;
+
+  if (patches[s.address]) {
+    romData.set(patches[s.address].original, s.address);
+    delete patches[s.address];
+  }
+
+  s.patched = false;
+  s.decoded = s.original_decoded;
+  s.length = countCharsROM(s.original_decoded);
+  s.status = classifyStatus(s.original_decoded);
+
+  patchCount = Object.keys(patches).length;
+  updatePatchBadge();
+  updateProgress();
+  renderTable();
+
+  const ta = document.getElementById(`ta_${addrHex}`);
+  if (ta) { ta.value = s.original_decoded; updateCounter(addrHex, s.max_chars); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SAVE / DOWNLOAD
+// ══════════════════════════════════════════════════════════════════════════════
+
+function downloadPatched() {
+  const name = romFileName ? romFileName.replace(/\.bin$/i, '_patched.bin') : 'patched.bin';
+  document.getElementById('saveFilename').value = name;
+  document.getElementById('modalStatus').textContent = '';
+  document.getElementById('modalStatus').className = '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function doSave() {
+  if (!romData) return;
+  applyTitleCredit();
+  const filename = document.getElementById('saveFilename').value.trim() || 'patched.bin';
+  const blob = new Blob([romData], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const status = document.getElementById('modalStatus');
+  status.textContent = `Downloaded ${filename} (${patchCount} patches applied)`;
+  status.className = 'ok';
+}
+
+function downloadTranslations() {
+  const json = JSON.stringify(rawJsonData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = jsonFileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setStatus(`Downloaded ${jsonFileName}`, false);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UI RENDERING
+// ══════════════════════════════════════════════════════════════════════════════
+
+function setStatus(msg, isError) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--danger)' : 'var(--mint)';
+}
+
+function updatePatchBadge() {
+  const badge = document.getElementById('patchBadge');
+  badge.textContent = `${patchCount} patch${patchCount !== 1 ? 'es' : ''}`;
+  badge.className = patchCount > 0 ? 'patch-badge has-patches' : 'patch-badge';
+}
+
+function updateProgress() {
+  const grid = document.getElementById('progressGrid');
+  // Single pass: accumulate counts per region
+  const stats = new Map();
+  for (const s of allStrings) {
+    let st = stats.get(s.region);
+    if (!st) { st = { total: 0, en: 0, mixed: 0 }; stats.set(s.region, st); }
+    if (s.status === 'SAKUJO') continue;
+    st.total++;
+    if (s.status === 'EN' || s.patched) st.en++;
+    else if (s.status === 'MIXED') st.mixed++;
+  }
+  grid.innerHTML = '';
+  for (const [r, st] of stats) {
+    if (st.total === 0) continue;
+    const pct = Math.round((st.en / st.total) * 100);
+    const chip = document.createElement('div');
+    chip.className = 'progress-chip';
+    chip.innerHTML = `
+      <span class="progress-chip-label">${esc(r.length > 16 ? r.slice(0, 15) + '...' : r)}</span>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-en" style="width:${(st.en/st.total*100).toFixed(1)}%"></div>
+        <div class="progress-bar-mixed" style="width:${(st.mixed/st.total*100).toFixed(1)}%"></div>
+      </div>
+      <span class="progress-chip-pct">${pct}%</span>
+    `;
+    grid.appendChild(chip);
+  }
+}
+
+function onProfileChange() {
+  // If ROM is loaded, re-extract with new profile
+  if (romData) loadRom();
+}
+
+function toggleVerify() {
+  const btn = document.getElementById('verifyToggle');
+  const input = document.getElementById('verifyFiles');
+  const isOn = input.value === '1';
+  input.value = isOn ? '0' : '1';
+  btn.textContent = isOn ? 'OFF' : 'ON';
+  btn.className = isOn ? 'toggle-switch off' : 'toggle-switch on';
+}
+
+function syncPills() {
+  document.querySelectorAll('.pill').forEach(p => {
+    const inp = p.querySelector('input');
+    if (inp) p.classList.toggle('active', inp.checked);
+  });
+}
+
+function applyFilters() {
+  const search     = document.getElementById('searchInput').value.trim().toLowerCase();
+  const region     = document.getElementById('regionFilter').value;
+  const jpOnly     = document.getElementById('jpOnly').checked;
+  const showShort  = document.getElementById('showShort').checked;
+  const showSakujo = document.getElementById('showSakujo').checked;
+  const translOnly = document.getElementById('translatedOnly').checked;
+
+  syncPills();
+
+  filtered = allStrings.filter(s => {
+    if (s.status === 'SAKUJO' && !showSakujo) return false;
+    if (!showShort && s.length < 3) return false;
+    if (region && s.region !== region) return false;
+    if (jpOnly && s.status !== 'JP' && s.status !== 'MIXED') return false;
+    if (translOnly && !s.patched && !s.pre_translated_text) return false;
+    if (search) {
+      const addr = s.address_hex.toLowerCase();
+      const text = (s.patched ? s.decoded : s.original_decoded).toLowerCase();
+      if (!addr.includes(search) && !text.includes(search)) return false;
+    }
+    return true;
+  });
+
+  renderTable();
+  const sakujoNote = !showSakujo && sakujoCount > 0 ? ` | ${sakujoCount} deleted hidden` : '';
+  document.getElementById('stringCount').textContent =
+    `${filtered.length} / ${allStrings.length}${sakujoNote}`;
+}
+
+function buildRegionDropdown() {
+  const sel = document.getElementById('regionFilter');
+  const regions = [...new Set(allStrings.map(s => s.region))];
+  sel.innerHTML = '<option value="">All Regions</option>';
+  regions.forEach(r => {
+    const opt = document.createElement('option');
+    opt.textContent = r;
+    sel.appendChild(opt);
+  });
+}
+
+function previewText(decoded) {
+  return decoded.replace(/\n/g, ' \u21B5 ').slice(0, 60) + (decoded.length > 60 ? '...' : '');
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  for (const s of filtered) {
+    const tr = document.createElement('tr');
+    tr.className = 'str-row'
+      + (s.status === 'SAKUJO' ? ' sakujo' : '')
+      + (s.patched ? ' patched' : '')
+      + (s.address_hex === activeAddr ? ' active' : '');
+    tr.dataset.addr = s.address_hex;
+
+    const usedNow = s.patched ? s.length : countCharsROM(s.original_decoded);
+    const preview = previewText(s.patched ? s.decoded : s.original_decoded);
+    const hasPre  = s.pre_translated_text && !s.patched;
+    const overflowWarn = s.overflow ? ' \u26A0' : '';
+    const ctx = s.context || '';
+
+    tr.innerHTML = `
+      <td class="addr">${s.patched ? '<span class="badge badge-P">P</span>' : ''}${s.address_hex}</td>
+      <td class="region-col">${esc(s.region)}</td>
+      <td class="slot-col">${s.slot_bytes}B</td>
+      <td class="used-col">${usedNow}/${s.max_chars}</td>
+      <td class="preview-col" title="${esc(ctx ? ctx + ' | ' + preview : preview)}">${esc(preview)}${ctx ? '<div class="context-hint">' + esc(ctx) + '</div>' : ''}</td>
+      <td>
+        ${hasPre ? '<span class="badge badge-PRE">PRE</span>' : ''}
+        <span class="badge badge-${s.status}">${s.status}${overflowWarn}</span>
+      </td>
+    `;
+    tr.addEventListener('click', () => toggleEdit(s.address_hex));
+    tbody.appendChild(tr);
+
+    if (s.address_hex === activeAddr) {
+      tbody.appendChild(buildEditRow(s));
+    }
+  }
+}
+
+function buildEditRow(s) {
+  const tr = document.createElement('tr');
+  tr.className = 'edit-row fade-in';
+  tr.dataset.editAddr = s.address_hex;
+
+  const currentText = s.patched ? s.decoded : (s.pre_translated_text || s.original_decoded);
+  const isPreFilled = !s.patched && s.pre_translated_text;
+
+  const td = document.createElement('td');
+  td.colSpan = 6;
+  td.innerHTML = `
+    <div class="edit-panel">
+      <div class="edit-header">
+        <span class="edit-addr">${s.address_hex}</span>
+        <span class="edit-meta">${esc(s.region)} &bull; ${s.slot_bytes}B slot &bull; ${s.max_chars} chars max</span>
+        ${s.overflow ? '<span class="edit-overflow-warn">\u26A0 Translation overflows slot</span>' : ''}
+        ${s.context ? '<span class="edit-context">' + esc(s.context) + '</span>' : ''}
+      </div>
+      <div class="edit-body">
+        <div class="edit-col">
+          <label>Original ROM Text</label>
+          <pre class="orig-pre">${esc(s.original_decoded)}</pre>
+        </div>
+        <div class="edit-col">
+          <label>Translation${isPreFilled ? ' &bull; <span style="color:var(--purple);font-weight:700;">PRE-TRANSLATED</span>' : ''}</label>
+          <textarea class="edit-textarea" id="ta_${s.address_hex}"
+            rows="3" spellcheck="false">${esc(currentText)}</textarea>
+          <div class="char-counter">
+            <span class="counter-text" id="ctr_${s.address_hex}">0 / ${s.max_chars}</span>
+            <div class="counter-bar">
+              <div class="counter-fill" id="fill_${s.address_hex}" style="width:0%;background:var(--mint)"></div>
+            </div>
+          </div>
+          ${SUBSTRING_BY_ADDR[s.address_hex] ? `
+          <div class="substring-preview" id="subprev_${s.address_hex}">
+            <div class="substring-preview-title">Substring Pointer Active</div>
+            <div class="substring-preview-row">
+              <span class="substring-label">Full string:</span>
+              <span class="substring-value" id="subfull_${s.address_hex}"></span>
+            </div>
+            <div class="substring-preview-row">
+              <span class="substring-label">Char ${SUBSTRING_BY_ADDR[s.address_hex].charOffset}+:</span>
+              <span class="substring-value" id="subsub_${s.address_hex}"></span>
+              <span class="substring-desc">${esc(SUBSTRING_BY_ADDR[s.address_hex].label)}</span>
+            </div>
+          </div>` : ''}
+          <div class="edit-error" id="err_${s.address_hex}"></div>
+          <div class="edit-actions">
+            <button class="btn btn-pink" id="applyBtn_${s.address_hex}"
+              onclick="applyPatch('${s.address_hex}', ${s.max_chars})">Apply</button>
+            <button class="btn btn-ghost" onclick="revertPatch('${s.address_hex}')">Reset</button>
+            <button class="btn btn-ghost" onclick="closeEdit()">Skip</button>
+            <span class="kbd-hint">
+              <kbd>Enter</kbd> apply &bull; <kbd>Shift+Enter</kbd> newline &bull; <kbd>Esc</kbd> close &bull; <kbd>N</kbd> next JP
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  tr.appendChild(td);
+
+  setTimeout(() => {
+    const ta = document.getElementById(`ta_${s.address_hex}`);
+    if (!ta) return;
+    ta.addEventListener('input', () => updateCounter(s.address_hex, s.max_chars));
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const btn = document.getElementById(`applyBtn_${s.address_hex}`);
+        if (btn && !btn.disabled) applyPatch(s.address_hex, s.max_chars);
+      }
+    });
+    updateCounter(s.address_hex, s.max_chars);
+    ta.focus();
+  }, 0);
+
+  return tr;
+}
+
+function toggleEdit(addrHex) {
+  activeAddr = activeAddr === addrHex ? null : addrHex;
+  renderTable();
+}
+
+function closeEdit() {
+  activeAddr = null;
+  renderTable();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CHAR COUNTING
+// ══════════════════════════════════════════════════════════════════════════════
+
+function countCharsROM(text) {
+  let count = 0, i = 0;
+  while (i < text.length) {
+    if (text[i] === "'" || text[i] === '\u2019') { count += 2; i++; continue; }
+    if (text[i] === '[' && i + 4 <= text.length && text[i + 3] === ']') {
+      const hex = text.slice(i + 1, i + 3);
+      if (/^[0-9A-Fa-f]{2}$/.test(hex)) { count++; i += 4; continue; }
+    }
+    count++;
+    i++;
+  }
+  return count;
+}
+
+function maxLineLen(text) {
+  let max = 0;
+  for (const line of text.split('\n')) {
+    const len = countCharsROM(line);
+    if (len > max) max = len;
+  }
+  return max;
+}
+
+function updateCounter(addrHex, maxChars) {
+  const ta   = document.getElementById(`ta_${addrHex}`);
+  const ctr  = document.getElementById(`ctr_${addrHex}`);
+  const fill = document.getElementById(`fill_${addrHex}`);
+  const btn  = document.getElementById(`applyBtn_${addrHex}`);
+  const err  = document.getElementById(`err_${addrHex}`);
+  if (!ta) return;
+
+  const sel = ta.selectionStart, sel2 = ta.selectionEnd;
+  const up = ta.value.toUpperCase();
+  if (ta.value !== up) { ta.value = up; ta.setSelectionRange(sel, sel2); }
+
+  const count   = countCharsROM(ta.value);
+  const longest = maxLineLen(ta.value);
+  const ratio = maxChars > 0 ? count / maxChars : 0;
+  const pct   = Math.min(ratio * 100, 100).toFixed(1);
+
+  let cls = 'counter-ok', color = 'var(--mint)';
+  if (ratio >= 1.0) { cls = 'counter-over'; color = 'var(--danger)'; }
+  else if (ratio >= 0.8) { cls = 'counter-warn'; color = 'var(--orange)'; }
+
+  ctr.textContent  = `${count} / ${maxChars} chars`;
+  ctr.className    = `counter-text ${cls}`;
+  fill.style.width = pct + '%';
+  fill.style.background = color;
+
+  const overSlot      = count > maxChars;
+  const overLine      = longest > LINE_MAX;
+  const hasApostrophe = /['\u2019]/.test(ta.value);
+  btn.disabled = overSlot || hasApostrophe;
+  err.textContent = hasApostrophe
+    ? '\u2716 Apostrophes not supported \u2014 write ISNT not ISN\'T'
+    : overSlot
+      ? `Too long by ${count - maxChars} char(s)`
+      : overLine
+        ? `\u26A0 Line too long: ${longest} chars (max ${LINE_MAX} per line)`
+        : '';
+
+  // Update substring preview if this address has a substring rule
+  const rule = SUBSTRING_BY_ADDR[addrHex];
+  if (rule) {
+    const fullEl = document.getElementById(`subfull_${addrHex}`);
+    const subEl  = document.getElementById(`subsub_${addrHex}`);
+    if (fullEl && subEl) {
+      const text = ta.value;
+      // Count ROM chars to find the substring start
+      const chars = [];
+      let ci = 0, ri = 0;
+      while (ri < text.length) {
+        if (text[ri] === '[' && ri + 4 <= text.length && text[ri + 3] === ']' &&
+            /^[0-9A-Fa-f]{2}$/.test(text.slice(ri + 1, ri + 3))) {
+          chars.push(text.slice(ri, ri + 4));
+          ri += 4;
+        } else {
+          chars.push(text[ri]);
+          ri++;
+        }
+      }
+      fullEl.textContent = text;
+      fullEl.className = 'substring-value';
+      const subChars = chars.slice(rule.charOffset - 1);
+      const subText = subChars.join('');
+      if (subText.length === 0) {
+        subEl.textContent = '(empty - will show blank!)';
+        subEl.className = 'substring-value empty';
+      } else {
+        subEl.textContent = subText;
+        subEl.className = 'substring-value';
+      }
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+function jumpNextUntranslated() {
+  const currentIdx = activeAddr ? filtered.findIndex(s => s.address_hex === activeAddr) : -1;
+  for (let i = currentIdx + 1; i < filtered.length; i++) {
+    if (filtered[i].status === 'JP' || filtered[i].status === 'MIXED') {
+      activeAddr = filtered[i].address_hex;
+      renderTable();
+      const row = document.querySelector(`tr[data-addr="${filtered[i].address_hex}"]`);
+      if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showToast('Jumped to next untranslated');
+      return;
+    }
+  }
+  for (let i = 0; i <= currentIdx; i++) {
+    if (filtered[i].status === 'JP' || filtered[i].status === 'MIXED') {
+      activeAddr = filtered[i].address_hex;
+      renderTable();
+      const row = document.querySelector(`tr[data-addr="${filtered[i].address_hex}"]`);
+      if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showToast('Wrapped to first untranslated');
+      return;
+    }
+  }
+  showToast('All strings translated!');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('kbToast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 1500);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════════════════════════════
+
+let activeTab = 'strings';
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab)
+  );
+  const stringsEls = ['progressDash', 'filterbar', 'tableWrap'];
+  if (tab === 'strings') {
+    stringsEls.forEach(id => { document.getElementById(id).style.display = ''; });
+    document.getElementById('tileWrap').style.display = 'none';
+    if (romData) {
+      document.getElementById('progressDash').classList.add('visible');
+      document.getElementById('filterbar').classList.add('visible');
+    }
+  } else {
+    stringsEls.forEach(id => { document.getElementById(id).style.display = 'none'; });
+    document.getElementById('tileWrap').style.display = 'block';
+    if (romData) renderTileGrid();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TILE DECODE / ENCODE
+// ══════════════════════════════════════════════════════════════════════════════
+
+function readRGB555(rom, offset) {
+  const hi = rom[offset], lo = rom[offset + 1];
+  const val = (hi << 8) | lo;
+  const r = Math.round(((val >> 10) & 0x1F) * 255 / 31);
+  const g = Math.round(((val >> 5) & 0x1F) * 255 / 31);
+  const b = Math.round((val & 0x1F) * 255 / 31);
+  return [r, g, b];
+}
+
+function getTileDeviceColors(tile) {
+  if (tile.deviceColors) {
+    // Fill in any null entries (except index 0 transparent) from ROM palette
+    const colors = Object.assign({}, tile.deviceColors);
+    for (let i = 0; i < tile.ncolors; i++) {
+      if (colors[i] === undefined) {
+        colors[i] = readRGB555(romData, tile.address + 4 + i * 2);
+      }
+    }
+    return colors;
+  }
+  // No device colors — read entire palette from ROM (approximate)
+  const colors = {};
+  for (let i = 0; i < tile.ncolors; i++) {
+    colors[i] = readRGB555(romData, tile.address + 4 + i * 2);
+  }
+  // Index 0 is typically transparent
+  colors[0] = null;
+  return colors;
+}
+
+function buildColorMap(deviceColors) {
+  // Invert deviceColors (index→RGB) to colorMap (RGB string→index)
+  const map = {};
+  // Index 0 is always transparent — EN PNGs use (0,255,0) for it
+  map['0,255,0'] = 0;
+  for (const [idx, rgb] of Object.entries(deviceColors)) {
+    if (rgb) {
+      map[`${rgb[0]},${rgb[1]},${rgb[2]}`] = Number(idx);
+    }
+  }
+  return map;
+}
+
+function closestColorIndex(r, g, b, colorMap) {
+  let bestIdx = 0, bestDist = Infinity;
+  for (const [key, idx] of Object.entries(colorMap)) {
+    const [cr, cg, cb] = key.split(',').map(Number);
+    const dist = (r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2;
+    if (dist < bestDist) { bestDist = dist; bestIdx = idx; }
+  }
+  return bestIdx;
+}
+
+function decodeTileToCanvas(tile) {
+  const { address, width, height, ncolors } = tile;
+  if (!width || !height || !romData) return null;
+
+  const deviceColors = getTileDeviceColors(tile);
+  const headerSize = 4 + ncolors * 2;
+  const pixelStart = address + headerSize + 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const imgData = ctx.createImageData(width, height);
+
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const bytePos = pixelStart + row * Math.floor(width / 2) + Math.floor(col / 2);
+      const byte = romData[bytePos] || 0;
+      const idx = (col % 2 === 0) ? (byte & 0x0F) : ((byte >> 4) & 0x0F);
+      const rgb = deviceColors[idx];
+      const px = (row * width + col) * 4;
+      if (rgb) {
+        imgData.data[px] = rgb[0];
+        imgData.data[px + 1] = rgb[1];
+        imgData.data[px + 2] = rgb[2];
+        imgData.data[px + 3] = 255;
+      } else {
+        // Index 0 / transparent: render as bright green (matches EN PNG convention)
+        imgData.data[px] = 0;
+        imgData.data[px + 1] = 255;
+        imgData.data[px + 2] = 0;
+        imgData.data[px + 3] = 255;
+      }
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return canvas;
+}
+
+function encodeTilePNG(tile, file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const { address, width, height, ncolors } = tile;
+      if (img.width !== width || img.height !== height) {
+        reject(`PNG must be ${width}\u00d7${height}, got ${img.width}\u00d7${img.height}`);
+        return;
+      }
+      // Read pixels via canvas
+      const c = document.createElement('canvas');
+      c.width = width; c.height = height;
+      const cx = c.getContext('2d');
+      cx.drawImage(img, 0, 0);
+      const imgData = cx.getImageData(0, 0, width, height).data;
+
+      const deviceColors = getTileDeviceColors(tile);
+      const colorMap = buildColorMap(deviceColors);
+      const headerSize = 4 + ncolors * 2;
+      const pixelSize = Math.floor((width * height) / 2);
+      const pixelStart = address + headerSize + 2;
+
+      // Backup original pixels
+      if (!tilePatches[address]) {
+        tilePatches[address] = {
+          original: romData.slice(pixelStart, pixelStart + pixelSize),
+        };
+      }
+
+      const newPixels = new Uint8Array(pixelSize);
+      for (let row = 0; row < height; row++) {
+        for (let col = 0; col < width; col++) {
+          const px = (row * width + col) * 4;
+          const r = imgData[px], g = imgData[px + 1], b = imgData[px + 2];
+          const a = imgData[px + 3];
+          let idx = 0;
+          if (a < 128) {
+            idx = 0;
+          } else {
+            const key = `${r},${g},${b}`;
+            idx = (colorMap[key] !== undefined) ? colorMap[key] : closestColorIndex(r, g, b, colorMap);
+          }
+          const bytePos = row * Math.floor(width / 2) + Math.floor(col / 2);
+          if (col % 2 === 0) {
+            newPixels[bytePos] |= idx;
+          } else {
+            newPixels[bytePos] |= (idx << 4);
+          }
+        }
+      }
+
+      // Write to romData (metadata bytes are untouched)
+      romData.set(newPixels, pixelStart);
+      resolve();
+    };
+    img.onerror = () => reject('Failed to load PNG image');
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function revertTilePatch(address) {
+  const patch = tilePatches[address];
+  if (!patch) return;
+  const tile = TILE_BY_ADDR[address];
+  const headerSize = 4 + tile.ncolors * 2;
+  const pixelStart = address + headerSize + 2;
+  romData.set(patch.original, pixelStart);
+  delete tilePatches[address];
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TILE UI
+// ══════════════════════════════════════════════════════════════════════════════
+
+function initTileRegistry() {
+  // Read Birthday Labels header from ROM if available
+  const bday = TILE_BY_ADDR[3773784];
+  if (bday && romData && romData.length > 3773784 + 4) {
+    bday.width = romData[3773784];
+    bday.height = romData[3773784 + 1];
+    bday.ncolors = romData[3773784 + 2];
+    if (bday.ncolors > 0) {
+      bday.metadata = [
+        romData[3773784 + 4 + bday.ncolors * 2],
+        romData[3773784 + 4 + bday.ncolors * 2 + 1],
+      ];
+    }
+  }
+}
+
+function renderTileGrid() {
+  const grid = document.getElementById('tileGrid');
+  grid.innerHTML = '';
+
+  const patchedCount = Object.keys(tilePatches).length;
+  const total = TILE_REGISTRY.filter(t => !t.unavailable).length;
+  document.getElementById('tileSummaryText').textContent =
+    `${TILE_REGISTRY.length} tiles \u2022 ${patchedCount} patched`;
+  document.getElementById('tileSaveBtn').disabled = patchedCount === 0;
+
+  for (const tile of TILE_REGISTRY) {
+    // If this tile is expanded, render the expanded panel instead
+    if (activeTile === tile.address) {
+      const expandedEl = buildTileExpanded(tile);
+      grid.appendChild(expandedEl);
+      continue;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'tile-card'
+      + (tilePatches[tile.address] ? ' patched' : '')
+      + (activeTile === tile.address ? ' active' : '');
+
+    const thumb = document.createElement('div');
+    thumb.className = 'tile-card-thumb';
+    if (!tile.unavailable && romData) {
+      const canvas = decodeTileToCanvas(tile);
+      if (canvas) thumb.appendChild(canvas);
+    } else {
+      thumb.innerHTML = '<span class="tile-preview-empty">N/A</span>';
+    }
+
+    const info = document.createElement('div');
+    info.className = 'tile-card-info';
+
+    const status = tile.unavailable ? 'UNAVAIL'
+      : tilePatches[tile.address] ? 'PATCHED' : 'PENDING';
+
+    info.innerHTML = `
+      <div class="tile-card-name">${esc(tile.name)}</div>
+      <div class="tile-card-meta">
+        <span>${tile.width}\u00d7${tile.height}</span>
+        <span class="badge badge-${status}">${status}</span>
+      </div>
+    `;
+
+    card.appendChild(thumb);
+    card.appendChild(info);
+    if (!tile.unavailable) {
+      card.addEventListener('click', () => {
+        activeTile = activeTile === tile.address ? null : tile.address;
+        tileUploadedFile = null;
+        renderTileGrid();
+      });
+    }
+    grid.appendChild(card);
+  }
+}
+
+function buildTileExpanded(tile) {
+  const el = document.createElement('div');
+  el.className = 'tile-expanded fade-in';
+
+  const addrHex = '0x' + tile.address.toString(16).toUpperCase().padStart(8, '0');
+  const metaHex = tile.metadata ? tile.metadata.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ') : '??';
+  const isPatched = !!tilePatches[tile.address];
+
+  el.innerHTML = `
+    <div class="tile-expanded-header">
+      <span class="tile-expanded-name">${esc(tile.name)}</span>
+      <span class="tile-expanded-meta">${addrHex} \u2022 ${tile.width}\u00d7${tile.height} \u2022 ${tile.ncolors} colors \u2022 Meta: ${metaHex}</span>
+      ${isPatched ? '<span class="badge badge-PATCHED">PATCHED</span>' : ''}
+    </div>
+    <div class="tile-sidebyside">
+      <div class="tile-preview-box">
+        <div class="tile-preview-label">Current (ROM)</div>
+        <div class="tile-preview-canvas-wrap" id="tileOgPreview"></div>
+      </div>
+      <div class="tile-preview-box">
+        <div class="tile-preview-label">Replacement (PNG)</div>
+        <div class="tile-preview-canvas-wrap" id="tileEnPreview">
+          <span class="tile-preview-empty">No PNG uploaded</span>
+        </div>
+      </div>
+    </div>
+    <div class="tile-upload-row">
+      <button class="btn btn-ghost" onclick="document.getElementById('tilePngFile').click()">Choose PNG</button>
+      <input type="file" id="tilePngFile" class="file-btn-hidden" accept=".png" onchange="handleTilePNG(this)">
+      <span class="tile-file-label" id="tilePngName"></span>
+    </div>
+    <div class="tile-actions">
+      <button class="btn btn-pink" id="tileApplyBtn" onclick="applyTilePatch()" disabled>Apply</button>
+      <button class="btn btn-ghost" onclick="revertTileAndRefresh()">Revert</button>
+      <button class="btn btn-ghost" onclick="closeTileEdit()">Close</button>
+    </div>
+    <div class="tile-error" id="tileError"></div>
+    <div class="tile-status-msg" id="tileStatusMsg"></div>
+  `;
+
+  // Render OG preview after DOM insertion
+  setTimeout(() => {
+    const ogWrap = document.getElementById('tileOgPreview');
+    if (ogWrap) {
+      const canvas = decodeTileToCanvas(tile);
+      if (canvas) {
+        ogWrap.innerHTML = '';
+        ogWrap.appendChild(canvas);
+      }
+    }
+  }, 0);
+
+  return el;
+}
+
+function handleTilePNG(input) {
+  const file = input.files[0];
+  if (!file) return;
+  tileUploadedFile = file;
+  document.getElementById('tilePngName').textContent = file.name;
+  document.getElementById('tileApplyBtn').disabled = false;
+  document.getElementById('tileError').textContent = '';
+
+  // Preview the uploaded PNG
+  const wrap = document.getElementById('tileEnPreview');
+  const img = new Image();
+  img.onload = () => {
+    wrap.innerHTML = '';
+    img.style.imageRendering = 'pixelated';
+    wrap.appendChild(img);
+  };
+  img.src = URL.createObjectURL(file);
+  input.value = '';
+}
+
+async function applyTilePatch() {
+  if (!activeTile || !tileUploadedFile) return;
+  const tile = TILE_BY_ADDR[activeTile];
+  const errEl = document.getElementById('tileError');
+  const msgEl = document.getElementById('tileStatusMsg');
+  errEl.textContent = '';
+  msgEl.textContent = '';
+
+  try {
+    await encodeTilePNG(tile, tileUploadedFile);
+    tileUploadedFile = null;
+    renderTileGrid();  // re-renders with updated preview, stays expanded
+    showToast(`Patched ${tile.name}`);
+  } catch (e) {
+    errEl.textContent = String(e);
+  }
+}
+
+function revertTileAndRefresh() {
+  if (!activeTile) return;
+  const addr = activeTile;
+  revertTilePatch(addr);
+  renderTileGrid();  // stays expanded since activeTile unchanged
+  showToast('Tile reverted');
+}
+
+function closeTileEdit() {
+  activeTile = null;
+  tileUploadedFile = null;
+  renderTileGrid();
+}
+
+function downloadTilePatched() {
+  if (!romData) return;
+  const name = romFileName ? romFileName.replace(/\.bin$/i, '_tiles.bin') : 'tiles_patched.bin';
+  document.getElementById('saveFilename').value = name;
+  document.getElementById('modalStatus').textContent = '';
+  document.getElementById('modalStatus').className = '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+document.addEventListener('keydown', (e) => {
+  const tag = e.target.tagName;
+  const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+  if (e.key === 'Escape') {
+    if (document.getElementById('modalOverlay').classList.contains('open')) {
+      document.getElementById('modalOverlay').classList.remove('open');
+    } else if (activeAddr) {
+      closeEdit();
+    }
+    return;
+  }
+
+  if (isInput) return;
+
+  if (e.key === 'n' || e.key === 'N') {
+    e.preventDefault();
+    jumpNextUntranslated();
+  }
+});
+</script>
+</body>
+</html>

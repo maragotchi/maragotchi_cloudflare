@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TamaSma Quick Patcher</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.5;background:#f5f5f4;color:#1c1917;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.wrap{max-width:520px;width:100%;margin:0 auto;padding:32px 24px}
+h1{font-size:18px;font-weight:600;margin-bottom:2px}
+.subtitle{font-size:13px;color:#78716c;margin-bottom:24px}
+
+.step{background:#fff;border:1px solid #e7e5e4;border-radius:8px;padding:16px;margin-bottom:12px;transition:border-color .2s}
+.step.done{border-color:#bbf7d0}
+.step-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.step-num{width:24px;height:24px;border-radius:50%;background:#e7e5e4;color:#57534e;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,color .2s}
+.step.done .step-num{background:#16a34a;color:#fff}
+.step-title{font-size:14px;font-weight:600}
+.step-info{font-size:12px;color:#78716c;margin-left:34px;margin-bottom:8px}
+
+.drop-zone{border:1px dashed #d6d3d1;border-radius:6px;padding:18px;text-align:center;cursor:pointer;position:relative;background:#fafaf9;transition:border-color .15s,background .15s}
+.drop-zone:hover,.drop-zone.drag-over{border-color:#a8a29e;background:#f5f5f4}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone p{font-size:13px;color:#57534e}.drop-zone p strong{color:#1c1917}
+.drop-zone small{font-size:12px;color:#a8a29e;display:block;margin-top:2px}
+.file-label{font-size:12px;color:#16a34a;margin-top:6px;margin-left:34px;display:none}
+.file-label.visible{display:block}
+
+.btn{font-size:14px;font-weight:600;font-family:inherit;border-radius:8px;padding:12px 20px;cursor:pointer;border:1px solid;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s,opacity .15s}
+.btn-primary{background:#1c1917;color:#fff;border-color:#1c1917}
+.btn-primary:hover:not(:disabled){background:#292524}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+.status{font-size:13px;color:#57534e;text-align:center;margin-top:12px;min-height:20px}
+.status.err{color:#dc2626}.status.ok{color:#16a34a}
+
+.prog-bar{height:3px;background:#e7e5e4;border-radius:2px;overflow:hidden;margin-top:10px;display:none}
+.prog-bar.visible{display:block}
+.prog-fill{height:100%;background:#1c1917;width:0%;transition:width .25s}
+
+.result{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-top:12px;display:none;text-align:center}
+.result.visible{display:block}
+.result p{font-size:13px;color:#57534e;margin-bottom:4px}
+.result .big{font-size:15px;font-weight:600;color:#16a34a}
+
+details{margin-top:16px;font-size:12px;color:#a8a29e}
+summary{cursor:pointer}
+.log{margin-top:6px;max-height:120px;overflow-y:auto;background:#fafaf9;border:1px solid #e7e5e4;border-radius:4px;padding:8px;font-family:ui-monospace,monospace;font-size:11px;color:#57534e;white-space:pre-wrap}
+
+.footer{margin-top:20px;font-size:12px;color:#a8a29e;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>TamaSma Quick Patcher</h1>
+  <p class="subtitle">Load your card, load a patch pack, get a patched .bin. That's it.</p>
+
+  <!-- STEP 1: BIN -->
+  <div class="step" id="s1">
+    <div class="step-head">
+      <span class="step-num">1</span>
+      <span class="step-title">Card .bin file</span>
+    </div>
+    <div class="step-info">Your original TamaSma Card dump.</div>
+    <div class="drop-zone" id="drop-bin">
+      <input type="file" accept=".bin" id="in-bin">
+      <p>Drop your <strong>.bin</strong> here, or click to browse</p>
+      <small>128 KB · 1 MB · 2 MB cards</small>
+    </div>
+    <div class="file-label" id="fl-bin"></div>
+  </div>
+
+  <!-- STEP 2: ZIP -->
+  <div class="step" id="s2">
+    <div class="step-head">
+      <span class="step-num">2</span>
+      <span class="step-title">Patch pack (.zip)</span>
+    </div>
+    <div class="step-info">A .zip with translations, sprites, or both.</div>
+    <div class="drop-zone" id="drop-zip">
+      <input type="file" accept=".zip,.csv" id="in-zip">
+      <p>Drop the <strong>patch .zip</strong> here, or click to browse</p>
+      <small>.zip or .csv</small>
+    </div>
+    <div class="file-label" id="fl-zip"></div>
+  </div>
+
+  <!-- STEP 3: GO -->
+  <div class="step" id="s3">
+    <div class="step-head">
+      <span class="step-num">3</span>
+      <span class="step-title">Patch &amp; download</span>
+    </div>
+    <button class="btn btn-primary" id="btn-go" disabled>Patch &amp; Download</button>
+    <div class="prog-bar" id="prog"><div class="prog-fill" id="pfill"></div></div>
+  </div>
+
+  <div class="status" id="status"></div>
+  <div class="result" id="result">
+    <p class="big">Patched!</p>
+    <p id="result-msg"></p>
+  </div>
+
+  <details id="log-wrap" style="display:none">
+    <summary>Patch log</summary>
+    <div class="log" id="log"></div>
+  </details>
+
+  <div class="footer">
+    TamaSma Quick Patcher · encoding from <a href="https://github.com/zenzoa/smartypants" style="color:#78716c">SmartyPants</a> by zenzoa
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ENCODING TABLE (from SmartyPants by zenzoa)
+// ═══════════════════════════════════════════════════════════════
+const RAW_ENC=[
+  [0,"█"],[1," ","\u3000"],[2,"０","0"],[3,"１","1"],[4,"２","2"],[5,"３","3"],[6,"４","4"],[7,"５","5"],
+  [8,"６","6"],[9,"７","7"],[10,"８","8"],[11,"９","9"],[12,"＋","+"],[13,"－","-"],[14,"↵"],
+  [15,"あ"],[16,"い"],[17,"う"],[18,"え"],[19,"お"],[20,"か"],[21,"き"],[22,"く"],[23,"け"],[24,"こ"],
+  [25,"さ"],[26,"し"],[27,"す"],[28,"せ"],[29,"そ"],[30,"た"],[31,"ち"],[32,"つ"],[33,"て"],[34,"と"],
+  [35,"な"],[36,"に"],[37,"ぬ"],[38,"ね"],[39,"の"],[40,"は"],[41,"ひ"],[42,"ふ"],[43,"へ"],[44,"ほ"],
+  [45,"ま"],[46,"み"],[47,"む"],[48,"め"],[49,"も"],[50,"や"],[51,"ゆ"],[52,"よ"],
+  [53,"ら"],[54,"り"],[55,"る"],[56,"れ"],[57,"ろ"],[58,"わ"],[59,"を"],[60,"ん"],
+  [61,"ぁ"],[62,"ぃ"],[63,"ぅ"],[64,"ぇ"],[65,"ぉ"],[66,"っ"],[67,"ゃ"],[68,"ゅ"],[69,"ょ"],
+  [70,"が"],[71,"ぎ"],[72,"ぐ"],[73,"げ"],[74,"ご"],[75,"ざ"],[76,"じ"],[77,"ず"],[78,"ぜ"],[79,"ぞ"],
+  [80,"だ"],[81,"ぢ"],[82,"づ"],[83,"で"],[84,"ど"],[85,"ば"],[86,"び"],[87,"ぶ"],[88,"べ"],[89,"ぼ"],
+  [90,"ぱ"],[91,"ぴ"],[92,"ぷ"],[93,"ぺ"],[94,"ぽ"],
+  [95,"ア"],[96,"イ"],[97,"ウ"],[98,"エ"],[99,"オ"],[100,"カ"],[101,"キ"],[102,"ク"],[103,"ケ"],[104,"コ"],
+  [105,"サ"],[106,"シ"],[107,"ス"],[108,"セ"],[109,"ソ"],[110,"タ"],[111,"チ"],[112,"ツ"],[113,"テ"],[114,"ト"],
+  [115,"ナ"],[116,"ニ"],[117,"ヌ"],[118,"ネ"],[119,"ノ"],[120,"ハ"],[121,"ヒ"],[122,"フ"],[123,"ヘ"],[124,"ホ"],
+  [125,"マ"],[126,"ミ"],[127,"ム"],[128,"メ"],[129,"モ"],[130,"ヤ"],[131,"ユ"],[132,"ヨ"],
+  [133,"ラ"],[134,"リ"],[135,"ル"],[136,"レ"],[137,"ロ"],[138,"ワ"],[139,"ヲ"],[140,"ン"],
+  [141,"ァ"],[142,"ィ"],[143,"ゥ"],[144,"ェ"],[145,"ォ"],[146,"ッ"],[147,"ャ"],[148,"ュ"],[149,"ョ"],
+  [150,"ガ"],[151,"ギ"],[152,"グ"],[153,"ゲ"],[154,"ゴ"],[155,"ザ"],[156,"ジ"],[157,"ズ"],[158,"ゼ"],[159,"ゾ"],
+  [160,"ダ"],[161,"ヂ"],[162,"ヅ"],[163,"デ"],[164,"ド"],[165,"バ"],[166,"ビ"],[167,"ブ"],[168,"ベ"],[169,"ボ"],
+  [170,"パ"],[171,"ピ"],[172,"プ"],[173,"ペ"],[174,"ポ"],[175,"ヴ"],
+  [176,"ー","—","–"],[177,"～","~"],[178,"…"],[179,"、",","],[180,"。"],
+  [181,"（","("],[182,"）",")"],[183,"「","\u201c"],[184,"」","\u201d"],[185,"．","."],[186,"•"],
+  [187,"！","!"],[188,"？","?"],[189,"＆","&"],[190,"〇","○"],[191,"✕"],[192,"♥"],[193,"☼"],
+  [194,"★","*"],[195,"🌀"],[196,"♪"],[197,"💢"],[198,"⤴"],[199,"⤵"],[200,"→"],[201,"←"],[202,"＄","$"],[203,"％","%"],
+  [204,"Ａ","A","a"],[205,"Ｂ","B","b"],[206,"Ｃ","C","c"],[207,"Ｄ","D","d"],[208,"Ｅ","E","e"],[209,"Ｆ","F","f"],
+  [210,"Ｇ","G","g"],[211,"Ｈ","H","h"],[212,"Ｉ","I","i"],[213,"Ｊ","J","j"],[214,"Ｋ","K","k"],[215,"Ｌ","L","l"],
+  [216,"Ｍ","M","m"],[217,"Ｎ","N","n"],[218,"Ｏ","O","o"],[219,"Ｐ","P","p"],[220,"Ｑ","Q","q"],[221,"Ｒ","R","r"],
+  [222,"Ｓ","S","s"],[223,"Ｔ","T","t"],[224,"Ｕ","U","u"],[225,"Ｖ","V","v"],[226,"Ｗ","W","w"],[227,"Ｘ","X","x"],
+  [228,"Ｙ","Y","y"],[229,"Ｚ","Z","z"],[230,"¡"],[231,"_"],[232,"†"],
+  [233,"😄"],[234,"😣"],[235,"😤"],[236,"😑"],[237,"😵"],[238,"😢"],[239,"🐱"],[240,"⏱"],
+  [241,"🎂"],[242,"🎁"],[243,"📱"],[244,"🏢"],[245,"💼"],[246,"🍙"],[247,"🍰"],[248,"✨"],[249,"🟥"],
+  [0xF000,"<br>"],[0xF001,"<hr>"],
+  [0xF002,"{username}"],[0xF003,"{charname}"],[0xF004,"{statement}"],
+  [0xF005,"{question1}"],[0xF006,"{question2}"],[0xF007,"{variable}"],
+  [0xF008,"{pronoun}"],[0xF009,"{nickname}"],[0xF00A,"{owner}"],
+];
+const DEC=new Map(), ENC=new Map(), SEQS=[];
+for(const[code,...ts] of RAW_ENC){
+  DEC.set(code,ts[0]);
+  for(const t of ts){if(!t)continue;ENC.set(t,code);if(t!==t.toLowerCase())ENC.set(t.toLowerCase(),code);if(t.length>1)SEQS.push(t);}
+}
+SEQS.sort((a,b)=>b.length-a.length);
+
+function decode(words){return words.map(w=>!w?'':DEC.has(w)?DEC.get(w):`[${w.toString(16).padStart(4,'0').toUpperCase()}]`).join('');}
+function encode(text){
+  const codes=[],unk=[];let i=0;
+  while(i<text.length){
+    let m=false;
+    for(const s of SEQS){
+      if(text.startsWith(s,i)){codes.push(ENC.get(s));i+=s.length;m=true;break;}
+      const lo=s.toLowerCase();
+      if(lo!==s&&text.toLowerCase().startsWith(lo,i)){const c=ENC.get(s)??ENC.get(lo);if(c!==undefined){codes.push(c);i+=s.length;m=true;break;}}
+    }
+    if(!m){const ch=text[i];const c=ENC.get(ch)??ENC.get(ch.toLowerCase());if(c!==undefined)codes.push(c);else unk.push(ch);i++;}
+  }
+  return{codes,unk};
+}
+function toBytes(codes){const o=[];for(const c of codes){o.push((c>>8)&0xFF,c&0xFF);}o.push(0,0);return o;}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function fmtBytes(n){if(n<1024)return n+' B';if(n<1048576)return(n/1024).toFixed(1)+' KB';return(n/1048576).toFixed(2)+' MB';}
+function parseCsvLine(line){const cols=[],n=line.length;let cur='',q=false;for(let i=0;i<n;i++){if(line[i]==='"'&&!q){q=true;continue;}if(line[i]==='"'&&q){q=false;continue;}if(line[i]===','&&!q){cols.push(cur);cur='';continue;}cur+=line[i];}cols.push(cur);return cols;}
+function isJP(s){return/[\u3040-\u30FF\u4E00-\u9FFF]/.test(s);}
+
+// RGB555 / pixel bit ops
+function rgbTo555(r,g,b,a){if(a<128)return 0x8000;return((r>>3)<<10)|((g>>3)<<5)|(b>>3);}
+function to555RGBA(w){if(w&0x8000)return[0,0,0,0];return[((w>>10)&0x1F)<<3,((w>>5)&0x1F)<<3,(w&0x1F)<<3,255];}
+function packBits(idxs,bpp,bc){const b=new Uint8Array(bc);let p=0;for(const i of idxs){for(let k=bpp-1;k>=0;k--){if((i>>k)&1)b[Math.floor(p/8)]|=(1<<(7-(p%8)));p++;}}return b;}
+function unpackBits(data,off,bpp,n){const o=[];let p=0;for(let i=0;i<n;i++){let v=0;for(let k=bpp-1;k>=0;k--){v|=((data[off+Math.floor(p/8)]>>(7-(p%8)))&1)<<k;p++;}o.push(v);}return o;}
+function loadPNG(ab){return new Promise((ok,no)=>{const b=new Blob([ab],{type:'image/png'}),u=URL.createObjectURL(b),img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');x.drawImage(img,0,0);const d=x.getImageData(0,0,img.width,img.height);URL.revokeObjectURL(u);ok({w:img.width,h:img.height,px:d.data});};img.onerror=()=>{URL.revokeObjectURL(u);no(new Error('PNG load failed'));};img.src=u;});}
+
+// ═══════════════════════════════════════════════════════════════
+// BINARY PARSER
+// ═══════════════════════════════════════════════════════════════
+class Parser {
+  constructor(buf){this.buf=buf;this.d=new Uint8Array(buf);this.v=new DataView(buf);}
+  u8(o){return this.d[o];} u16(o){return this.v.getUint16(o,true);} u32(o){return this.v.getUint32(o,true);}
+  ascii(o,n){let s='';for(let i=0;i<n;i++){const c=this.d[o+i];if(!c)break;s+=String.fromCharCode(c);}return s;}
+
+  parse(){
+    if(this.u16(0x1000)!==0x3232)throw new Error('Not a valid TamaSma card');
+    this.hdr={productId:this.ascii(32,16),cardId:this.u16(50),cardType:this.u16(48),
+      buildYear:this.u16(54),buildMonth:this.u16(56),buildDay:this.u16(58),buildRev:this.u16(60)};
+    const pkgN=this.u16(0x1002);
+    this.pkgs=[];
+    for(let i=0;i<pkgN;i++){const b=0x1004+i*16;this.pkgs.push({off:this.u32(b+4),csz:this.u32(b+8),usz:this.u32(b+12)});}
+    this.dps=[]; this.spkg=null;
+    const dBases=new Set();
+    for(const p of this.pkgs){
+      if(!p.off||!p.csz)continue;
+      const abs=0x1000+p.off;
+      if(abs>=this.buf.byteLength)continue;
+      try{const dp=this._dp(abs);if(dp){this.dps.push({...dp,base:abs});dBases.add(abs);}}catch(_){}
+    }
+    for(const p of this.pkgs){
+      if(!p.off||p.csz<1000)continue;
+      const abs=0x1000+p.off;
+      if(dBases.has(abs)||abs>=this.buf.byteLength)continue;
+      try{this.spkg=new SpritePkg(this.d,this.v,abs,p.usz).parse();break;}catch(_){}
+    }
+    return this;
+  }
+
+  _dp(base){
+    const raw=Array.from({length:20},(_,i)=>this.u32(base+i*4));
+    const abs=raw.map(r=>base+r*2),bc=raw.map((r,i)=>i<19?(raw[i+1]-r)*2:0);
+    const strings=this._strs(abs[6],abs[7]);
+    const items=this._items(abs[10],bc[10]);
+    const chars=this._chars(abs[11],bc[11]);
+    if(!strings.length&&!items.length)return null;
+    return{strings,items,chars};
+  }
+  _strs(sb,ob){
+    if(!sb||!ob||sb>=this.buf.byteLength)return[];
+    const offs=[];let p=ob;
+    while(p+2<=this.buf.byteLength){const v=this.u16(p);if(v===0xFFFF)break;offs.push(sb+v*2);p+=2;}
+    return offs.map((so,i)=>{
+      if(so+8>this.buf.byteLength)return null;
+      const next=i+1<offs.length?offs[i+1]:so+512;
+      const id=this.u16(so);
+      const words=[];let q=so+8;
+      while(q+1<this.buf.byteLength&&q<next){const w=this.u16(q);if(!w)break;words.push(w);q+=2;}
+      return{id,words,offset:so+8,maxBytes:next-(so+8)};
+    }).filter(Boolean);
+  }
+  _items(base,bc){
+    if(!base||bc<42)return[];
+    return Array.from({length:Math.floor(bc/42)},(_,i)=>{
+      const b=base+i*42;
+      if(b+42>this.buf.byteLength)return null;
+      return{id:this.u16(b),type:this.u16(b+2),base:b,
+             words:Array.from({length:10},(_,j)=>this.u16(b+4+j*2)),nameOff:b+4};
+    }).filter(Boolean);
+  }
+  _chars(base,bc){
+    if(!base||bc<96)return[];
+    return Array.from({length:Math.floor(bc/96)},(_,i)=>{
+      const b=base+i*96;if(b+96>this.buf.byteLength)return null;
+      const fld=(off,n)=>({words:Array.from({length:n},(_,j)=>this.u16(b+off+j*2)),off:b+off,max:n*2});
+      return{id:this.u16(b),type:this.u16(b+2),base:b,
+             name:fld(4,10),pronoun:fld(32,6),statement:fld(44,6),q1:fld(56,6),q2:fld(68,6)};
+    }).filter(Boolean);
+  }
+  _find(key,id){for(const dp of this.dps){const s=dp[key].find(x=>x.id===id);if(s)return s;}return null;}
+  _count(key){return this.dps.reduce((a,dp)=>a+dp[key].length,0);}
+  findStr(id){return this._find('strings',id);}
+  findItem(id){return this._find('items',id);}
+  findChar(id){return this._find('chars',id);}
+  get nStr(){return this._count('strings');}
+  get nItem(){return this._count('items');}
+  get nChar(){return this._count('chars');}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRITE PACKAGE
+// ═══════════════════════════════════════════════════════════════
+class SpritePkg {
+  constructor(d,v,base,sz){this.d=d;this.v=v;this.base=base;this.sz=sz||0;}
+  u8(o){return this.d[o];} u16(o){return this.v.getUint16(o,true);} i16(o){return this.v.getInt16(o,true);}
+
+  parse(){
+    const b=this.base;
+    const iO=this.v.getUint32(b,true),sO=this.v.getUint32(b+4,true),pO=this.v.getUint32(b+8,true),xO=this.v.getUint32(b+12,true);
+    if(iO>=pO||sO>=pO||pO>=xO)throw new Error('Bad sprite pkg');
+    this.iTab=b+iO;this.sTab=b+sO;this.pTab=b+pO;this.xTab=b+xO;
+    this.sprites=this._sprs(sO,pO);
+    this.imgSets=this._imgs(iO,sO);
+    return this;
+  }
+  _sprs(sO,pO){
+    const b=this.base,out=[];
+    for(let o=b+sO;o+8<=b+pO;o+=8){
+      const pi=this.u16(o),ox=this.i16(o+2),oy=this.i16(o+4),pr=this.u16(o+6);
+      const bpp=[2,4,6,8][pr&3],wc=(pr>>4)&3,hc=(pr>>6)&3,q=!!(pr>>15&1);
+      let wp=[8,16,32,64][wc],hp=[8,16,32,64][hc];
+      if(q){wp*=4;hp*=4;}
+      out.push({idx:out.length,pi,ox,oy,bpp,wp,hp,q,bc:Math.ceil(wp*hp*bpp/8)});
+    }
+    return out;
+  }
+  _imgs(iO,sO){
+    const b=this.base,out=[];
+    for(let o=b+iO;o+6<=b+sO;o+=6){
+      const fs=this.u16(o),ws=this.u8(o+2),hs=this.u8(o+3),fp=this.u16(o+4);
+      const sp=this.sprites[fs];if(!sp)continue;
+      const next=o+6+6<=b+sO?this.u16(o+6):this.sprites.length;
+      const sub=Math.max(1,Math.floor((next-fs)/(ws*hs||1)));
+      out.push({idx:out.length,fs,ws,hs,wp:ws*sp.wp,hp:hs*sp.hp,bpp:sp.bpp,fp,sub,pal:1});
+    }
+    for(let i=0;i<out.length;i++){
+      const s=out[i],nfp=i+1<out.length?out[i+1].fp:Infinity;
+      if(nfp!==Infinity){const tc=(nfp-s.fp)*4,cpal=1<<s.bpp;s.pal=Math.max(1,Math.floor(tc/cpal));}
+    }
+    return out;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PATCH IMAGE
+// ═══════════════════════════════════════════════════════════════
+async function patchImg(d,v,spkg,idx,pngBuf){
+  const s=spkg.imgSets[idx];if(!s)throw new Error(`No image ${idx}`);
+  const png=await loadPNG(pngBuf);
+  const ew=s.wp*s.sub,eh=s.hp*s.pal;
+  if(png.w!==ew||png.h!==eh)throw new Error(`Need ${ew}\u00d7${eh}, got ${png.w}\u00d7${png.h}`);
+  const px=png.px,cpal=1<<s.bpp;
+  const mainPal=[],seen=new Map(),cpos=[];
+  for(let si=0;si<s.sub;si++)for(let py=0;py<s.hp;py++)for(let qx=0;qx<s.wp;qx++){
+    const ax=si*s.wp+qx,ay=py,fi=(ay*png.w+ax)*4;
+    const c=rgbTo555(px[fi],px[fi+1],px[fi+2],px[fi+3]);
+    if(!seen.has(c)){seen.set(c,mainPal.length);cpos.push(ay*png.w+ax);mainPal.push(c);}
+  }
+  if(mainPal.length>cpal)throw new Error(`${mainPal.length} colors > ${cpal} limit (${s.bpp}bpp)`);
+  const fc=s.fp*4;const pbo=spkg.pTab+fc*2;
+  for(let ci=0;ci<cpal;ci++)v.setUint16(pbo+ci*2,ci<mainPal.length?mainPal[ci]:0,true);
+  for(let pi=1;pi<s.pal;pi++){
+    const apbo=pbo+pi*cpal*2;
+    for(let ci=0;ci<cpos.length&&ci<cpal;ci++){
+      const fp=cpos[ci],ax=fp%png.w,ay=Math.floor(fp/png.w)+pi*s.hp;
+      const fi=(ay*png.w+ax)*4;
+      v.setUint16(apbo+ci*2,rgbTo555(px[fi],px[fi+1],px[fi+2],px[fi+3]),true);
+    }
+  }
+  for(let si=0;si<s.sub;si++){
+    const ss=s.fs+si*(s.ws*s.hs);
+    for(let row=0;row<s.hs;row++){for(let col=0;col<s.ws;col++){
+      const spr=spkg.sprites[ss+row*s.ws+col];if(!spr)continue;
+      const idxs=[];
+      for(let py=0;py<spr.hp;py++)for(let qx=0;qx<spr.wp;qx++){
+        const ax=si*s.wp+col*spr.wp+qx,ay=row*spr.hp+py,fi=(ay*png.w+ax)*4;
+        const c=rgbTo555(px[fi],px[fi+1],px[fi+2],px[fi+3]);
+        const pi=seen.get(c);if(pi===undefined)throw new Error('Color not in palette');
+        idxs.push(pi);
+      }
+      const packed=packBits(idxs,spr.bpp,spr.bc);
+      d.set(packed,spkg.xTab+spr.pi*spr.bc);
+    }}
+  }
+}
+
+function recalcCksum(buf,view){
+  let s=0;for(let i=0x1000;i+1<buf.byteLength;i+=2)s=(s+view.getUint16(i,true))&0xFFFF;
+  view.setUint16(2,s,true);return s;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CSV PARSERS
+// ═══════════════════════════════════════════════════════════════
+function parseSmartyCSV(text){
+  const patches=[];let section=null;
+  for(const rawLine of text.replace(/^\uFEFF/,'').split('\n')){
+    const line=rawLine.trim().replace(/\r$/,'');
+    if(!line||line.startsWith('#'))continue;
+    const cols=parseCsvLine(line);
+    const id0=(cols[0]||'').trim().toUpperCase();
+    if(['MENUS','DIALOG','STRINGS'].includes(id0)){section='dialog';continue;}
+    if(id0==='ITEMS'){section='items';continue;}
+    if(id0==='CHARACTERS'){section='characters';continue;}
+    const idNum=parseInt(cols[0],10);if(isNaN(idNum)||!section)continue;
+    const col2=(cols[2]||'').trim(),col1=(cols[1]||'').trim();
+    const translation=col2||(col1&&!isJP(col1)?col1:'');
+    if(!translation)continue;
+    patches.push({table:section,id:idNum,text:translation});
+  }
+  return patches;
+}
+
+function parseHeaderCSV(text){
+  const rows=[];const lines=text.replace(/^\uFEFF/,'').split('\n');let header=null;
+  for(const rawLine of lines){
+    const line=rawLine.trim().replace(/\r$/,'');
+    if(!line||line.startsWith('#'))continue;
+    const cols=parseCsvLine(line);
+    if(!header){header=cols.map(c=>c.trim().toLowerCase().replace(/ /g,'_'));continue;}
+    const row={};header.forEach((h,i)=>row[h]=(cols[i]||'').trim());
+    if(row.id)rows.push(row);
+  }
+  return rows;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMPORT PACK (DOM-free — populates edits maps directly)
+// ═══════════════════════════════════════════════════════════════
+async function importPack(file, parser, edits, log){
+  const fname=file.name.toLowerCase();
+  let strPatches=[];
+
+  if(fname.endsWith('.zip')){
+    const zip=await JSZip.loadAsync(await file.arrayBuffer());
+
+    // strings.csv
+    if(zip.file('strings.csv')){
+      const txt=await zip.file('strings.csv').async('text');
+      strPatches=parseSmartyCSV(txt);
+      log(`strings.csv: ${strPatches.length} entries`);
+    }
+
+    // items.csv
+    if(zip.file('items.csv')){
+      const rows=parseHeaderCSV(await zip.file('items.csv').async('text'));
+      for(const row of rows){
+        if(!row.id)continue;
+        const id=parseInt(row.id);
+        if(!parser.findItem(id)){log(`Item ${id}: not found in .bin, skipped`);continue;}
+        const fields={};
+        for(const key of ['en_name','price','fullness','happiness','image_id','worn_image_id','close_image_id','unlock_char']){
+          const v=row[key]||row[key.replace(/_/g,' ')]||'';
+          if(v)fields[key]=v;
+        }
+        if(Object.keys(fields).length)edits.items.set(id,fields);
+      }
+      log(`items.csv: ${edits.items.size} items`);
+    }
+
+    // characters.csv
+    if(zip.file('characters.csv')){
+      const rows=parseHeaderCSV(await zip.file('characters.csv').async('text'));
+      for(const row of rows){
+        if(!row.id)continue;
+        const id=parseInt(row.id);
+        if(!parser.findChar(id)){log(`Char ${id}: not found in .bin, skipped`);continue;}
+        const fields={};
+        for(const key of ['en_name','pronoun','statement','question1','question2','gender','min_loss_1','min_loss_2']){
+          const v=row[key]||'';
+          if(v)fields[key]=v;
+        }
+        if(Object.keys(fields).length)edits.chars.set(id,fields);
+      }
+      log(`characters.csv: ${edits.chars.size} characters`);
+    }
+
+    // images — prefer raw binary patches over PNGs
+    if(zip.file('image_patches.json')){
+      const patches=JSON.parse(await zip.file('image_patches.json').async('text'));
+      if(!edits.rawImages)edits.rawImages=[];
+      for(const p of patches){
+        if(!parser.spkg||!parser.spkg.imgSets[p.idx]){log(`Image ${p.idx}: no matching sprite slot, skipped`);continue;}
+        edits.rawImages.push(p);
+      }
+      log(`image_patches.json: ${edits.rawImages.length} raw image patches`);
+    }else{
+      const imgFiles=Object.keys(zip.files).filter(f=>f.startsWith('images/')&&f.endsWith('.png'));
+      for(const ip of imgFiles){
+        const m=ip.match(/images\/(\d+)\.png/);if(!m)continue;
+        const idx=parseInt(m[1]);
+        if(!parser.spkg||!parser.spkg.imgSets[idx]){log(`Image ${idx}: no matching sprite slot, skipped`);continue;}
+        edits.images.set(idx,await zip.file(ip).async('arraybuffer'));
+      }
+      if(imgFiles.length)log(`images: ${edits.images.size} sprites`);
+    }
+
+  } else {
+    // plain CSV
+    strPatches=parseSmartyCSV(await file.text());
+    log(`CSV: ${strPatches.length} string entries`);
+  }
+
+  // apply string patches to edits map
+  let strOk=0,strSkip=0;
+  for(const p of strPatches){
+    if(!p.text)continue;
+    const s=parser.findStr(p.id);
+    if(!s){strSkip++;continue;}
+    edits.strings.set(p.id,p.text);
+    strOk++;
+  }
+  if(strSkip)log(`${strSkip} string IDs not found in .bin (skipped)`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// APPLY ALL EDITS
+// ═══════════════════════════════════════════════════════════════
+async function applyAll(parser, edits, log){
+  const buf=parser.buf.slice(0);
+  const d=new Uint8Array(buf),v=new DataView(buf);
+  let applied=0,errs=[];
+
+  const trySync=(label,fn)=>{try{fn();applied++;}catch(e){errs.push(`${label}: ${e.message}`);log(`FAIL ${label}: ${e.message}`);}};
+  const tryAsync=async(label,fn)=>{try{await fn();applied++;}catch(e){errs.push(`${label}: ${e.message}`);log(`FAIL ${label}: ${e.message}`);}};
+  const writeEncStr=(off,max,text)=>{const bytes=toBytes(encode(text).codes);if(bytes.length>max)throw new Error(`Overflow ${bytes.length}>${max}B`);for(let i=0;i<max;i++)d[off+i]=i<bytes.length?bytes[i]:0;};
+  const writeU16=(base,off,val)=>{if(val!==''&&val!==undefined&&!isNaN(+val))v.setUint16(base+off,+val,true);};
+
+  // Strings
+  for(const[id,text] of edits.strings){
+    const s=parser.findStr(id);
+    if(!s){errs.push(`String ${id}: not found`);continue;}
+    trySync(`String ${id}`,()=>writeEncStr(s.offset,s.maxBytes,text));
+  }
+
+  // Items
+  for(const[id,fields] of edits.items){
+    const it=parser.findItem(id);
+    if(!it){errs.push(`Item ${id}: not found`);continue;}
+    trySync(`Item ${id}`,()=>{
+      if(fields.en_name)writeEncStr(it.nameOff,20,fields.en_name);
+      const w=(off,val)=>writeU16(it.base,off,val);
+      w(24,fields.image_id);w(26,fields.worn_image_id);w(28,fields.close_image_id);
+      w(32,fields.price);w(34,fields.fullness);w(36,fields.happiness);w(40,fields.unlock_char);
+    });
+  }
+
+  // Characters
+  for(const[id,fields] of edits.chars){
+    const ch=parser.findChar(id);
+    if(!ch){errs.push(`Char ${id}: not found`);continue;}
+    trySync(`Char ${id}`,()=>{
+      const b=ch.base;
+      const ws=(off,max,text)=>{if(text)writeEncStr(b+off,max,text);};
+      ws(4,20,fields.en_name);ws(32,12,fields.pronoun);ws(44,12,fields.statement);ws(56,12,fields.question1);ws(68,12,fields.question2);
+      writeU16(b,86,fields.min_loss_1);writeU16(b,88,fields.min_loss_2);
+      if(fields.gender!==undefined)v.setUint16(b+94,fields.gender==='male'||fields.gender==='1'?1:0,true);
+    });
+  }
+
+  // Images (PNG re-encode path)
+  for(const[idx,pngBuf] of edits.images)
+    await tryAsync(`Image ${idx}`,()=>patchImg(d,v,parser.spkg,idx,pngBuf));
+
+  // Raw image patches (binary diff path — write palette + pixel data directly)
+  if(edits.rawImages){
+    for(const p of edits.rawImages){
+      trySync(`Image ${p.idx} (raw)`,()=>{
+        const spkg=parser.spkg,s=spkg.imgSets[p.idx];
+        // write palette
+        const pbo=spkg.pTab+s.fp*4*2;
+        for(let ci=0;ci<p.palette.length;ci++)v.setUint16(pbo+ci*2,p.palette[ci],true);
+        // write pixel data
+        for(const sp of p.sprites){
+          const spr=spkg.sprites[s.fs+sp.idx];
+          const off=spkg.xTab+spr.pi*spr.bc;
+          for(let i=0;i<sp.pixels.length;i++)d[off+i]=sp.pixels[i];
+        }
+      });
+    }
+  }
+
+  const ck=recalcCksum(buf,v);
+  return{buf,applied,errors:errs,ck};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+
+let binFile=null, binParser=null;
+let zipFile=null;
+
+function setStatus(msg,cls=''){const el=$('status');el.textContent=msg;el.className='status'+(cls?' '+cls:'');}
+
+function setupDrop(zoneId,inputId,handler){
+  const z=$(zoneId),inp=$(inputId);
+  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag-over');});
+  z.addEventListener('dragleave',()=>z.classList.remove('drag-over'));
+  z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag-over');if(e.dataTransfer.files[0])handler(e.dataTransfer.files[0]);});
+  inp.addEventListener('change',e=>{if(e.target.files[0])handler(e.target.files[0]);inp.value='';});
+}
+
+function checkReady(){
+  $('btn-go').disabled=!(binParser&&zipFile);
+}
+
+// Load .bin
+setupDrop('drop-bin','in-bin',file=>{
+  if(file.size>4*1024*1024){setStatus('File too large — max 4 MB','err');return;}
+  setStatus('Reading .bin...');
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      binParser=new Parser(e.target.result).parse();
+      binFile=file;
+      const h=binParser.hdr;
+      $('fl-bin').textContent=`${file.name} (${fmtBytes(file.size)}) — ${binParser.nStr} strings, ${binParser.nItem} items, ${binParser.nChar} characters`+(binParser.spkg?`, ${binParser.spkg.imgSets.length} images`:'');
+      $('fl-bin').classList.add('visible');
+      $('s1').classList.add('done');
+      setStatus('Card loaded.');
+      checkReady();
+    }catch(er){setStatus('Error: '+er.message,'err');}
+  };
+  r.readAsArrayBuffer(file);
+});
+
+// Load .zip
+setupDrop('drop-zip','in-zip',file=>{
+  if(file.size>20*1024*1024){setStatus('Pack too large — max 20 MB','err');return;}
+  zipFile=file;
+  $('fl-zip').textContent=file.name+' ('+fmtBytes(file.size)+')';
+  $('fl-zip').classList.add('visible');
+  $('s2').classList.add('done');
+  setStatus(binParser?'Ready to patch.':'Now load your .bin file.');
+  checkReady();
+});
+
+// Patch
+$('btn-go').addEventListener('click',async()=>{
+  if(!binParser||!zipFile)return;
+  const btn=$('btn-go');
+  btn.disabled=true;btn.textContent='Patching...';
+  $('prog').classList.add('visible');$('pfill').style.width='10%';
+  $('result').classList.remove('visible');
+  setStatus('');
+
+  const logLines=[];
+  const log=msg=>logLines.push(msg);
+
+  try{
+    // Import
+    const edits={strings:new Map(),items:new Map(),chars:new Map(),images:new Map()};
+    $('pfill').style.width='30%';
+    await importPack(zipFile, binParser, edits, log);
+
+    const total=edits.strings.size+edits.items.size+edits.chars.size+edits.images.size+(edits.rawImages?edits.rawImages.length:0);
+    if(total===0){
+      setStatus('No patches found in the pack. Check the .zip contents.','err');
+      btn.textContent='Patch & Download';btn.disabled=false;
+      $('prog').classList.remove('visible');
+      return;
+    }
+    log(`Total: ${total} edits (${edits.strings.size} strings, ${edits.items.size} items, ${edits.chars.size} chars, ${edits.images.size} images)`);
+
+    // Apply
+    $('pfill').style.width='60%';
+    const{buf,applied,errors,ck}=await applyAll(binParser, edits, log);
+    $('pfill').style.width='100%';
+
+    // Download
+    const a=document.createElement('a');
+    const outName=(binFile?.name||'card').replace(/\.bin$/i,'')+'-patched.bin';
+    a.href=URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'}));
+    a.download=outName;a.click();URL.revokeObjectURL(a.href);
+
+    log(`Checksum: 0x${ck.toString(16).toUpperCase().padStart(4,'0')}`);
+    if(errors.length){
+      $('result-msg').innerHTML=`${applied} applied, <strong>${errors.length} failed:</strong><ul style="text-align:left;margin:6px 0 0;font-size:12px;color:#dc2626">${errors.map(e=>'<li>'+e.replace(/</g,'&lt;')+'</li>').join('')}</ul>`;
+    }else{
+      $('result-msg').textContent=`${applied} patches applied. Saved as ${outName}`;
+    }
+    $('result').classList.add('visible');
+    setStatus(errors.length?`${applied} applied, ${errors.length} failed`:'Done!',errors.length?'err':'ok');
+    if(!errors.length)$('s3').classList.add('done');
+
+    btn.textContent='Patch & Download';btn.disabled=false;
+  }catch(e){
+    setStatus('Failed: '+e.message,'err');
+    log('FATAL: '+e.message);
+    btn.textContent='Patch & Download';btn.disabled=false;
+    $('pfill').style.width='0%';
+  }
+
+  // Show log
+  if(logLines.length){
+    $('log-wrap').style.display='';
+    $('log').textContent=logLines.join('\n');
+  }
+});
+</script>
+</body>
+</html>
