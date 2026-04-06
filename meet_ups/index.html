@@ -965,8 +965,16 @@
 <div id="tableWrap">
   <div id="emptyState">
     <div class="empty-icon">&#x1F4BE;</div>
-    <strong>No ROM loaded</strong>
-    <p>Select your .bin ROM file to get started. Then load a translations.json file.</p>
+    <strong>Quick Start</strong>
+    <div style="text-align:left; display:inline-block; margin:12px auto 0; line-height:2.2; font-size:14px; color:var(--slate);">
+      <strong>Open ROM</strong> select your <code>.bin</code> firmware file<br>
+      <strong>Load JSON</strong> select your <code>translations.json</code><br>
+      <strong>Apply All</strong> click to patch translations into the ROM, then click<br>
+      <strong>Save Patched</strong> to download your translated ROM
+    </div>
+    <p style="margin-top:16px; font-size:13px; color:var(--muted);">
+      Need the translations.json or tile images? <a href="https://github.com/maragotchi/meets_files/archive/refs/heads/main.zip" style="color:var(--pink); font-weight:600;">Download them here</a>
+    </p>
   </div>
   <table id="strTable" style="display:none">
     <thead>
@@ -1339,7 +1347,7 @@ let activeTile = null;   // address of expanded tile, or null
 let tileUploadedFile = null;  // File object for the current upload
 
 // ══════════════════════════════════════════════════════════════════════════════
-// STRING ENCODING
+// STRING ENCODING (original code continues below)
 // ══════════════════════════════════════════════════════════════════════════════
 
 function decodeByte(xx) {
@@ -1476,7 +1484,7 @@ const ROM_PROFILES = {
 // APP STATE
 // ══════════════════════════════════════════════════════════════════════════════
 
-const LINE_MAX = 12;  // max chars per line on the screen but sometimes its also just 9 so... might change lol
+const LINE_MAX = 12;      // max chars per line on the screen
 
 // Known substring pointer relationships: another menu reads from charOffset onward.
 // Format: { addr: hex string, charOffset: 1-based start, label: what the substring is used for }
