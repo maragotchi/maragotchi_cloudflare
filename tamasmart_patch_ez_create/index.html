@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TamaSma Patch Diff</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.5;background:#f5f5f4;color:#1c1917;min-height:100vh}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px 60px}
+.header{padding:28px 0 16px;border-bottom:1px solid #e7e5e4;margin-bottom:14px}
+.header h1{font-size:17px;font-weight:600}.header p{font-size:13px;color:#78716c;margin-top:2px}
+.status-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid #e7e5e4;border-radius:6px;margin-bottom:12px;font-size:13px;color:#57534e;min-height:36px}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#d6d3d1;flex-shrink:0;transition:background .2s}
+.status-dot.ok{background:#16a34a}.status-dot.warn{background:#d97706}.status-dot.err{background:#dc2626}
+
+.load-row{display:flex;gap:10px;margin-bottom:10px}
+.load-card{background:#fff;border:1px solid #e7e5e4;border-radius:8px;flex:1;overflow:hidden}
+.load-card.loaded{border-color:#bbf7d0}
+.load-head{padding:10px 14px;border-bottom:1px solid #f5f5f4;background:#fafaf9}
+.load-head h2{font-size:13px;font-weight:600}
+.load-head small{font-size:11px;color:#78716c;font-weight:400}
+.load-body{padding:12px 14px}
+.drop-zone{border:1px dashed #d6d3d1;border-radius:6px;padding:18px;text-align:center;cursor:pointer;position:relative;background:#fafaf9;transition:border-color .15s,background .15s}
+.drop-zone:hover,.drop-zone.drag-over{border-color:#a8a29e;background:#f5f5f4}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone p{font-size:13px;color:#57534e}.drop-zone p strong{color:#1c1917}
+.drop-zone small{font-size:12px;color:#a8a29e;display:block;margin-top:2px}
+.file-label{font-size:12px;color:#16a34a;margin-top:6px;display:none}
+.file-label.visible{display:block}
+
+.diff-card{background:#fff;border:1px solid #e7e5e4;border-radius:8px;margin-bottom:10px;overflow:hidden}
+.tab-bar{display:flex;align-items:stretch;padding:0 14px;background:#fafaf9;border-bottom:1px solid #e7e5e4;overflow-x:auto}
+.tab-btn{padding:10px 14px;font-size:13px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;color:#78716c;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.tab-btn.active{color:#1c1917;border-bottom-color:#1c1917}
+.tab-btn:hover:not(.active){color:#44403c}
+.tc{font-size:11px;background:#e7e5e4;color:#57534e;padding:1px 6px;border-radius:8px;min-width:22px;text-align:center}
+.tc.dirty{background:#dc2626;color:#fff}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+.table-wrap{overflow:auto;max-height:58vh}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{position:sticky;top:0;z-index:1;background:#fafaf9;border-bottom:1px solid #e7e5e4;padding:6px 8px;text-align:left;font-weight:600;color:#57534e;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+tbody tr{border-bottom:1px solid #f5f5f4}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#fafaf9}
+tbody tr.changed{background:#fefce8}
+td{padding:4px 8px;vertical-align:middle}
+td.id-c{color:#57534e;font-weight:500;white-space:nowrap;font-size:11px;width:56px}
+td.old{color:#dc2626;text-decoration:line-through;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.new{color:#16a34a;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.field-c{color:#78716c;font-size:11px;white-space:nowrap}
+
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;padding:12px;max-height:58vh;overflow-y:auto}
+.img-diff{border:1px solid #e7e5e4;border-radius:6px;overflow:hidden;background:#fafaf9}
+.img-diff-head{padding:5px 8px;font-size:11px;font-weight:600;color:#57534e;border-bottom:1px solid #f5f5f4}
+.img-pair{display:flex;gap:1px;background:#e7e5e4}
+.img-side{flex:1;background:#eeede9;display:flex;align-items:center;justify-content:center;min-height:60px;position:relative}
+.img-side img{max-width:100%;max-height:80px;image-rendering:pixelated}
+.img-label{position:absolute;top:3px;left:5px;font-size:9px;color:#78716c;background:rgba(255,255,255,.7);padding:0 4px;border-radius:2px}
+
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid #e7e5e4;flex-wrap:wrap}
+.diff-summary{font-size:12px;color:#78716c;flex:1}
+.btn{font-size:13px;font-weight:500;font-family:inherit;border-radius:6px;padding:7px 14px;cursor:pointer;border:1px solid;display:inline-flex;align-items:center;gap:5px;transition:background .15s}
+.btn-primary{background:#1c1917;color:#fff;border-color:#1c1917}
+.btn-primary:hover:not(:disabled){background:#292524}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+.footer{border-top:1px solid #e7e5e4;padding-top:14px;margin-top:24px;font-size:12px;color:#a8a29e;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#d6d3d1;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a href="/" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#78716c;text-decoration:none;margin-bottom:12px" onmouseover="this.style.color='#1c1917'" onmouseout="this.style.color='#78716c'">&larr; Back to Maragotchi</a>
+  <div class="header">
+    <h1>TamaSma Patch Diff</h1>
+    <p>Compare a modded .bin against the original, extract changes as a patch pack.</p>
+  </div>
+  <div class="status-bar"><span class="status-dot" id="sd"></span><span id="st">Load both .bin files to begin.</span></div>
+
+  <div class="load-row">
+    <div class="load-card" id="lc-orig">
+      <div class="load-head"><h2>Original .bin</h2><small>The unmodified card</small></div>
+      <div class="load-body">
+        <div class="drop-zone" id="drop-orig"><input type="file" accept=".bin" id="in-orig"><p>Drop <strong>original</strong> .bin</p></div>
+        <div class="file-label" id="fl-orig"></div>
+      </div>
+    </div>
+    <div class="load-card" id="lc-mod">
+      <div class="load-head"><h2>Modded .bin</h2><small>The modified version</small></div>
+      <div class="load-body">
+        <div class="drop-zone" id="drop-mod"><input type="file" accept=".bin" id="in-mod"><p>Drop <strong>modded</strong> .bin</p></div>
+        <div class="file-label" id="fl-mod"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diff-card" id="diff-card" style="display:none">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="strings">Strings <span class="tc" id="tc-strings">0</span></button>
+      <button class="tab-btn" data-tab="items">Items <span class="tc" id="tc-items">0</span></button>
+      <button class="tab-btn" data-tab="characters">Characters <span class="tc" id="tc-chars">0</span></button>
+      <button class="tab-btn" data-tab="images">Images <span class="tc" id="tc-images">0</span></button>
+    </div>
+
+    <div class="tab-panel active" data-panel="strings">
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Original</th><th>Modded</th></tr></thead><tbody id="tbl-strings"></tbody></table></div>
+    </div>
+    <div class="tab-panel" data-panel="items">
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Field</th><th>Original</th><th>Modded</th></tr></thead><tbody id="tbl-items"></tbody></table></div>
+    </div>
+    <div class="tab-panel" data-panel="characters">
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Field</th><th>Original</th><th>Modded</th></tr></thead><tbody id="tbl-chars"></tbody></table></div>
+    </div>
+    <div class="tab-panel" data-panel="images">
+      <div class="img-grid" id="img-grid"></div>
+    </div>
+
+    <div class="toolbar">
+      <span class="diff-summary" id="diff-summary"></span>
+      <button class="btn btn-primary" id="btn-export" disabled>Export patch .zip</button>
+    </div>
+  </div>
+</div>
+<div class="wrap" style="padding-top:0">
+  <div class="footer">
+    <span>TamaSma Patch Diff · encoding from SmartyPants by zenzoa</span>
+    <span>No ROM data included.</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ENCODING TABLE
+// ═══════════════════════════════════════════════════════════════
+const RAW_ENC=[
+  [0,"\u2588"],[1," ","\u3000"],[2,"\uFF10","0"],[3,"\uFF11","1"],[4,"\uFF12","2"],[5,"\uFF13","3"],[6,"\uFF14","4"],[7,"\uFF15","5"],
+  [8,"\uFF16","6"],[9,"\uFF17","7"],[10,"\uFF18","8"],[11,"\uFF19","9"],[12,"\uFF0B","+"],[13,"\uFF0D","-"],[14,"\u21B5"],
+  [15,"\u3042"],[16,"\u3044"],[17,"\u3046"],[18,"\u3048"],[19,"\u304A"],[20,"\u304B"],[21,"\u304D"],[22,"\u304F"],[23,"\u3051"],[24,"\u3053"],
+  [25,"\u3055"],[26,"\u3057"],[27,"\u3059"],[28,"\u305B"],[29,"\u305D"],[30,"\u305F"],[31,"\u3061"],[32,"\u3064"],[33,"\u3066"],[34,"\u3068"],
+  [35,"\u306A"],[36,"\u306B"],[37,"\u306C"],[38,"\u306D"],[39,"\u306E"],[40,"\u306F"],[41,"\u3072"],[42,"\u3075"],[43,"\u3078"],[44,"\u307B"],
+  [45,"\u307E"],[46,"\u307F"],[47,"\u3080"],[48,"\u3081"],[49,"\u3082"],[50,"\u3084"],[51,"\u3086"],[52,"\u3088"],
+  [53,"\u3089"],[54,"\u308A"],[55,"\u308B"],[56,"\u308C"],[57,"\u308D"],[58,"\u308F"],[59,"\u3092"],[60,"\u3093"],
+  [61,"\u3041"],[62,"\u3043"],[63,"\u3045"],[64,"\u3047"],[65,"\u3049"],[66,"\u3063"],[67,"\u3083"],[68,"\u3085"],[69,"\u3087"],
+  [70,"\u304C"],[71,"\u304E"],[72,"\u3050"],[73,"\u3052"],[74,"\u3054"],[75,"\u3056"],[76,"\u3058"],[77,"\u305A"],[78,"\u305C"],[79,"\u305E"],
+  [80,"\u3060"],[81,"\u3062"],[82,"\u3065"],[83,"\u3067"],[84,"\u3069"],[85,"\u3070"],[86,"\u3073"],[87,"\u3076"],[88,"\u3079"],[89,"\u307C"],
+  [90,"\u3071"],[91,"\u3074"],[92,"\u3077"],[93,"\u307A"],[94,"\u307D"],
+  [95,"\u30A2"],[96,"\u30A4"],[97,"\u30A6"],[98,"\u30A8"],[99,"\u30AA"],[100,"\u30AB"],[101,"\u30AD"],[102,"\u30AF"],[103,"\u30B1"],[104,"\u30B3"],
+  [105,"\u30B5"],[106,"\u30B7"],[107,"\u30B9"],[108,"\u30BB"],[109,"\u30BD"],[110,"\u30BF"],[111,"\u30C1"],[112,"\u30C4"],[113,"\u30C6"],[114,"\u30C8"],
+  [115,"\u30CA"],[116,"\u30CB"],[117,"\u30CC"],[118,"\u30CD"],[119,"\u30CE"],[120,"\u30CF"],[121,"\u30D2"],[122,"\u30D5"],[123,"\u30D8"],[124,"\u30DB"],
+  [125,"\u30DE"],[126,"\u30DF"],[127,"\u30E0"],[128,"\u30E1"],[129,"\u30E2"],[130,"\u30E4"],[131,"\u30E6"],[132,"\u30E8"],
+  [133,"\u30E9"],[134,"\u30EA"],[135,"\u30EB"],[136,"\u30EC"],[137,"\u30ED"],[138,"\u30EF"],[139,"\u30F2"],[140,"\u30F3"],
+  [141,"\u30A1"],[142,"\u30A3"],[143,"\u30A5"],[144,"\u30A7"],[145,"\u30A9"],[146,"\u30C3"],[147,"\u30E3"],[148,"\u30E5"],[149,"\u30E7"],
+  [150,"\u30AC"],[151,"\u30AE"],[152,"\u30B0"],[153,"\u30B2"],[154,"\u30B4"],[155,"\u30B6"],[156,"\u30B8"],[157,"\u30BA"],[158,"\u30BC"],[159,"\u30BE"],
+  [160,"\u30C0"],[161,"\u30C2"],[162,"\u30C5"],[163,"\u30C7"],[164,"\u30C9"],[165,"\u30D0"],[166,"\u30D3"],[167,"\u30D6"],[168,"\u30D9"],[169,"\u30DC"],
+  [170,"\u30D1"],[171,"\u30D4"],[172,"\u30D7"],[173,"\u30DA"],[174,"\u30DD"],[175,"\u30F4"],
+  [176,"\u30FC","\u2014","\u2013"],[177,"\uFF5E","~"],[178,"\u2026"],[179,"\u3001",","],[180,"\u3002"],
+  [181,"\uFF08","("],[182,"\uFF09",")"],[183,"\u300C","\u201C"],[184,"\u300D","\u201D"],[185,"\uFF0E","."],[186,"\u2022"],
+  [187,"\uFF01","!"],[188,"\uFF1F","?"],[189,"\uFF06","&"],[190,"\u3007","\u25CB"],[191,"\u2715"],[192,"\u2665"],[193,"\u263C"],
+  [194,"\u2605","*"],[195,"\uD83C\uDF00"],[196,"\u266A"],[197,"\uD83D\uDCA2"],[198,"\u2934"],[199,"\u2935"],[200,"\u2192"],[201,"\u2190"],[202,"\uFF04","$"],[203,"\uFF05","%"],
+  [204,"\uFF21","A","a"],[205,"\uFF22","B","b"],[206,"\uFF23","C","c"],[207,"\uFF24","D","d"],[208,"\uFF25","E","e"],[209,"\uFF26","F","f"],
+  [210,"\uFF27","G","g"],[211,"\uFF28","H","h"],[212,"\uFF29","I","i"],[213,"\uFF2A","J","j"],[214,"\uFF2B","K","k"],[215,"\uFF2C","L","l"],
+  [216,"\uFF2D","M","m"],[217,"\uFF2E","N","n"],[218,"\uFF2F","O","o"],[219,"\uFF30","P","p"],[220,"\uFF31","Q","q"],[221,"\uFF32","R","r"],
+  [222,"\uFF33","S","s"],[223,"\uFF34","T","t"],[224,"\uFF35","U","u"],[225,"\uFF36","V","v"],[226,"\uFF37","W","w"],[227,"\uFF38","X","x"],
+  [228,"\uFF39","Y","y"],[229,"\uFF3A","Z","z"],[230,"\u00A1"],[231,"_"],[232,"\u2020"],
+  [233,"\uD83D\uDE04"],[234,"\uD83D\uDE23"],[235,"\uD83D\uDE24"],[236,"\uD83D\uDE11"],[237,"\uD83D\uDE35"],[238,"\uD83D\uDE22"],[239,"\uD83D\uDC31"],[240,"\u23F1"],
+  [241,"\uD83C\uDF82"],[242,"\uD83C\uDF81"],[243,"\uD83D\uDCF1"],[244,"\uD83C\uDFE2"],[245,"\uD83D\uDCBC"],[246,"\uD83C\uDF59"],[247,"\uD83C\uDF70"],[248,"\u2728"],[249,"\uD83D\uDFE5"],
+  [0xF000,"<br>"],[0xF001,"<hr>"],
+  [0xF002,"{username}"],[0xF003,"{charname}"],[0xF004,"{statement}"],
+  [0xF005,"{question1}"],[0xF006,"{question2}"],[0xF007,"{variable}"],
+  [0xF008,"{pronoun}"],[0xF009,"{nickname}"],[0xF00A,"{owner}"],
+];
+const DEC=new Map();
+for(const[code,...ts] of RAW_ENC)DEC.set(code,ts[0]);
+function decode(words){return words.map(w=>!w?'':DEC.has(w)?DEC.get(w):`[${w.toString(16).padStart(4,'0').toUpperCase()}]`).join('');}
+function escHtml(s){return(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function csvEsc(s){return(s||'').match(/[,"\n]/)?'"'+s.replace(/"/g,'""')+'"':(s||'');}
+
+// ═══════════════════════════════════════════════════════════════
+// RGB555 / pixel ops
+// ═══════════════════════════════════════════════════════════════
+function to555RGBA(w){if(w&0x8000)return[0,0,0,0];return[((w>>10)&0x1F)<<3,((w>>5)&0x1F)<<3,(w&0x1F)<<3,255];}
+function unpackBits(data,off,bpp,n){const o=[];let p=0;for(let i=0;i<n;i++){let v=0;for(let k=bpp-1;k>=0;k--){v|=((data[off+Math.floor(p/8)]>>(7-(p%8)))&1)<<k;p++;}o.push(v);}return o;}
+
+// ═══════════════════════════════════════════════════════════════
+// BINARY PARSER
+// ═══════════════════════════════════════════════════════════════
+class Parser {
+  constructor(buf){this.buf=buf;this.d=new Uint8Array(buf);this.v=new DataView(buf);}
+  u8(o){return this.d[o];} u16(o){return this.v.getUint16(o,true);} u32(o){return this.v.getUint32(o,true);}
+  ascii(o,n){let s='';for(let i=0;i<n;i++){const c=this.d[o+i];if(!c)break;s+=String.fromCharCode(c);}return s;}
+
+  parse(){
+    if(this.u16(0x1000)!==0x3232)throw new Error('Not a valid TamaSma card');
+    this.hdr={productId:this.ascii(32,16),cardId:this.u16(50),cardType:this.u16(48),
+      buildYear:this.u16(54),buildMonth:this.u16(56),buildDay:this.u16(58),buildRev:this.u16(60)};
+    const pkgN=this.u16(0x1002);
+    this.pkgs=[];
+    for(let i=0;i<pkgN;i++){const b=0x1004+i*16;this.pkgs.push({off:this.u32(b+4),csz:this.u32(b+8),usz:this.u32(b+12)});}
+    this.dps=[];this.spkg=null;
+    const dBases=new Set();
+    for(const p of this.pkgs){
+      if(!p.off||!p.csz)continue;
+      const abs=0x1000+p.off;
+      if(abs>=this.buf.byteLength)continue;
+      try{const dp=this._dp(abs);if(dp){this.dps.push({...dp,base:abs});dBases.add(abs);}}catch(_){}
+    }
+    for(const p of this.pkgs){
+      if(!p.off||p.csz<1000)continue;
+      const abs=0x1000+p.off;
+      if(dBases.has(abs)||abs>=this.buf.byteLength)continue;
+      try{this.spkg=new SpritePkg(this.d,this.v,abs,p.usz).parse();break;}catch(_){}
+    }
+    return this;
+  }
+  _dp(base){
+    const raw=Array.from({length:20},(_,i)=>this.u32(base+i*4));
+    const abs=raw.map(r=>base+r*2),bc=raw.map((r,i)=>i<19?(raw[i+1]-r)*2:0);
+    const strings=this._strs(abs[6],abs[7]);
+    const items=this._items(abs[10],bc[10]);
+    const chars=this._chars(abs[11],bc[11]);
+    if(!strings.length&&!items.length)return null;
+    return{strings,items,chars};
+  }
+  _strs(sb,ob){
+    if(!sb||!ob||sb>=this.buf.byteLength)return[];
+    const offs=[];let p=ob;
+    while(p+2<=this.buf.byteLength){const v=this.u16(p);if(v===0xFFFF)break;offs.push(sb+v*2);p+=2;}
+    return offs.map((so,i)=>{
+      if(so+8>this.buf.byteLength)return null;
+      const next=i+1<offs.length?offs[i+1]:so+512;
+      const id=this.u16(so);
+      const words=[];let q=so+8;
+      while(q+1<this.buf.byteLength&&q<next){const w=this.u16(q);if(!w)break;words.push(w);q+=2;}
+      return{id,words,offset:so+8,maxBytes:next-(so+8)};
+    }).filter(Boolean);
+  }
+  _items(base,bc){
+    if(!base||bc<42)return[];
+    return Array.from({length:Math.floor(bc/42)},(_,i)=>{
+      const b=base+i*42;if(b+42>this.buf.byteLength)return null;
+      return{id:this.u16(b),type:this.u16(b+2),base:b,
+             words:Array.from({length:10},(_,j)=>this.u16(b+4+j*2)),nameOff:b+4,
+             price:this.u16(b+32),fullness:this.u16(b+34),happiness:this.u16(b+36),
+             imageId:this.u16(b+24),wornImageId:this.u16(b+26),closeImageId:this.u16(b+28),
+             unlockChar:this.u16(b+40)};
+    }).filter(Boolean);
+  }
+  _chars(base,bc){
+    if(!base||bc<96)return[];
+    return Array.from({length:Math.floor(bc/96)},(_,i)=>{
+      const b=base+i*96;if(b+96>this.buf.byteLength)return null;
+      const fld=(off,n)=>({words:Array.from({length:n},(_,j)=>this.u16(b+off+j*2)),off:b+off,max:n*2});
+      return{id:this.u16(b),type:this.u16(b+2),base:b,
+             name:fld(4,10),pronoun:fld(32,6),statement:fld(44,6),q1:fld(56,6),q2:fld(68,6),
+             gender:this.u16(b+94),minLoss1:this.u16(b+86),minLoss2:this.u16(b+88)};
+    }).filter(Boolean);
+  }
+  allStrings(){const out=[];for(const dp of this.dps)out.push(...dp.strings);return out;}
+  allItems(){const out=[];for(const dp of this.dps)out.push(...dp.items);return out;}
+  allChars(){const out=[];for(const dp of this.dps)out.push(...dp.chars);return out;}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRITE PACKAGE
+// ═══════════════════════════════════════════════════════════════
+class SpritePkg {
+  constructor(d,v,base,sz){this.d=d;this.v=v;this.base=base;this.sz=sz||0;}
+  u16(o){return this.v.getUint16(o,true);} u8(o){return this.d[o];} i16(o){return this.v.getInt16(o,true);}
+  parse(){
+    const b=this.base;
+    const iO=this.v.getUint32(b,true),sO=this.v.getUint32(b+4,true),pO=this.v.getUint32(b+8,true),xO=this.v.getUint32(b+12,true);
+    if(iO>=pO||sO>=pO||pO>=xO)throw new Error('Bad sprite pkg');
+    this.iTab=b+iO;this.sTab=b+sO;this.pTab=b+pO;this.xTab=b+xO;
+    this.sprites=this._sprs(sO,pO);
+    this.imgSets=this._imgs(iO,sO);
+    return this;
+  }
+  _sprs(sO,pO){
+    const b=this.base,out=[];
+    for(let o=b+sO;o+8<=b+pO;o+=8){
+      const pi=this.u16(o),ox=this.i16(o+2),oy=this.i16(o+4),pr=this.u16(o+6);
+      const bpp=[2,4,6,8][pr&3],wc=(pr>>4)&3,hc=(pr>>6)&3,q=!!(pr>>15&1);
+      let wp=[8,16,32,64][wc],hp=[8,16,32,64][hc];
+      if(q){wp*=4;hp*=4;}
+      out.push({idx:out.length,pi,ox,oy,bpp,wp,hp,q,bc:Math.ceil(wp*hp*bpp/8)});
+    }
+    return out;
+  }
+  _imgs(iO,sO){
+    const b=this.base,out=[];
+    for(let o=b+iO;o+6<=b+sO;o+=6){
+      const fs=this.u16(o),ws=this.u8(o+2),hs=this.u8(o+3),fp=this.u16(o+4);
+      const sp=this.sprites[fs];if(!sp)continue;
+      const next=o+6+6<=b+sO?this.u16(o+6):this.sprites.length;
+      const sub=Math.max(1,Math.floor((next-fs)/(ws*hs||1)));
+      out.push({idx:out.length,fs,ws,hs,wp:ws*sp.wp,hp:hs*sp.hp,bpp:sp.bpp,fp,sub,pal:1});
+    }
+    return out;
+  }
+  pal(imgIdx,pi=0){
+    const s=this.imgSets[imgIdx];const cpal=1<<s.bpp;
+    const fc=s.fp*4+pi*cpal;const bo=this.pTab+fc*2;
+    const out=[];for(let i=0;i<cpal;i++)out.push(to555RGBA(this.v.getUint16(bo+i*2,true)));
+    return out;
+  }
+  async render(imgIdx){
+    const s=this.imgSets[imgIdx];
+    const cw=s.wp*s.sub,ch=s.hp*s.pal;
+    const canvas=document.createElement('canvas');canvas.width=cw;canvas.height=ch;
+    const ctx=canvas.getContext('2d');const id=ctx.createImageData(cw,ch);const px=id.data;
+    for(let pi=0;pi<s.pal;pi++){
+      const palette=this.pal(imgIdx,pi);
+      for(let si=0;si<s.sub;si++){
+        const ss=s.fs+si*(s.ws*s.hs);
+        for(let row=0;row<s.hs;row++){for(let col=0;col<s.ws;col++){
+          const spr=this.sprites[ss+row*s.ws+col];if(!spr)continue;
+          const bo=this.xTab+spr.pi*spr.bc;
+          const pixels=unpackBits(this.d,bo,spr.bpp,spr.wp*spr.hp);
+          for(let py=0;py<spr.hp;py++){for(let qx=0;qx<spr.wp;qx++){
+            const c=palette[pixels[py*spr.wp+qx]]||[0,0,0,0];
+            const dx=si*s.wp+col*spr.wp+qx,dy=pi*s.hp+row*spr.hp+py;
+            const fi=(dy*cw+dx)*4;
+            px[fi]=c[0];px[fi+1]=c[1];px[fi+2]=c[2];px[fi+3]=c[3];
+          }}
+        }}
+      }
+    }
+    ctx.putImageData(id,0,0);return canvas;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DIFF ENGINE
+// ═══════════════════════════════════════════════════════════════
+function diffStrings(origP,modP){
+  const origMap=new Map();for(const s of origP.allStrings())origMap.set(s.id,s);
+  const diffs=[];
+  for(const ms of modP.allStrings()){
+    const os=origMap.get(ms.id);
+    if(!os)continue;
+    const ot=decode(os.words),mt=decode(ms.words);
+    if(ot!==mt)diffs.push({id:ms.id,orig:ot,mod:mt});
+  }
+  return diffs;
+}
+
+function diffItems(origP,modP){
+  const origMap=new Map();for(const it of origP.allItems())origMap.set(it.id,it);
+  const diffs=[];
+  const fields=['price','fullness','happiness','imageId','wornImageId','closeImageId','unlockChar'];
+  for(const mi of modP.allItems()){
+    const oi=origMap.get(mi.id);if(!oi)continue;
+    const on=decode(oi.words.filter(w=>w)),mn=decode(mi.words.filter(w=>w));
+    if(on!==mn)diffs.push({id:mi.id,field:'name',orig:on,mod:mn});
+    for(const f of fields){
+      if(oi[f]!==mi[f])diffs.push({id:mi.id,field:f,orig:String(oi[f]),mod:String(mi[f])});
+    }
+  }
+  return diffs;
+}
+
+function diffChars(origP,modP){
+  const origMap=new Map();for(const ch of origP.allChars())origMap.set(ch.id,ch);
+  const diffs=[];
+  const txtFields=[['name','name'],['pronoun','pronoun'],['statement','statement'],['q1','question1'],['q2','question2']];
+  const numFields=[['gender','gender'],['minLoss1','min_loss_1'],['minLoss2','min_loss_2']];
+  for(const mc of modP.allChars()){
+    const oc=origMap.get(mc.id);if(!oc)continue;
+    for(const[key,label] of txtFields){
+      const ot=decode(oc[key].words.filter(w=>w)),mt=decode(mc[key].words.filter(w=>w));
+      if(ot!==mt)diffs.push({id:mc.id,field:label,orig:ot,mod:mt});
+    }
+    for(const[key,label] of numFields){
+      if(oc[key]!==mc[key])diffs.push({id:mc.id,field:label,orig:String(oc[key]),mod:String(mc[key])});
+    }
+  }
+  return diffs;
+}
+
+async function diffImages(origP,modP){
+  if(!origP.spkg||!modP.spkg)return[];
+  const oS=origP.spkg,mS=modP.spkg;
+  const count=Math.min(oS.imgSets.length,mS.imgSets.length);
+  const diffs=[];
+  for(let i=0;i<count;i++){
+    const os=oS.imgSets[i],ms=mS.imgSets[i];
+    // compare raw pixel + palette data
+    let same=true;
+    // compare palette
+    const oCpal=1<<os.bpp,mCpal=1<<ms.bpp;
+    for(let ci=0;ci<Math.max(oCpal,mCpal)&&same;ci++){
+      const oOff=oS.pTab+(os.fp*4+ci)*2,mOff=mS.pTab+(ms.fp*4+ci)*2;
+      if(oOff+2>origP.d.length||mOff+2>modP.d.length){same=false;break;}
+      if(origP.v.getUint16(oOff,true)!==modP.v.getUint16(mOff,true))same=false;
+    }
+    // compare pixel data for all sprites
+    if(same){
+      const sprCount=ms.sub*ms.ws*ms.hs;
+      for(let si=0;si<sprCount&&same;si++){
+        const oSpr=oS.sprites[os.fs+si],mSpr=mS.sprites[ms.fs+si];
+        if(!oSpr||!mSpr){same=false;break;}
+        const oOff=oS.xTab+oSpr.pi*oSpr.bc,mOff=mS.xTab+mSpr.pi*mSpr.bc;
+        for(let b=0;b<mSpr.bc&&same;b++){
+          if(origP.d[oOff+b]!==modP.d[mOff+b])same=false;
+        }
+      }
+    }
+    if(!same)diffs.push(i);
+  }
+  return diffs;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+function setStatus(msg,type='idle'){$('st').textContent=msg;const d=$('sd');d.className='status-dot';if(type!=='idle')d.classList.add(type);}
+
+let origParser=null,modParser=null;
+let strDiffs=[],itemDiffs=[],charDiffs=[],imgDiffs=[];
+
+function setupDrop(zoneId,inputId,cb){
+  const z=$(zoneId),inp=$(inputId);
+  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag-over');});
+  z.addEventListener('dragleave',()=>z.classList.remove('drag-over'));
+  z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag-over');if(e.dataTransfer.files[0])cb(e.dataTransfer.files[0]);});
+  inp.addEventListener('change',e=>{if(e.target.files[0])cb(e.target.files[0]);});
+}
+
+function loadBin(file,which){
+  return new Promise((ok,no)=>{
+    if(file.size>4*1024*1024){no(new Error('File too large'));return;}
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const p=new Parser(e.target.result).parse();
+        if(which==='orig'){origParser=p;$('lc-orig').classList.add('loaded');$('fl-orig').textContent=file.name;$('fl-orig').classList.add('visible');}
+        else{modParser=p;$('lc-mod').classList.add('loaded');$('fl-mod').textContent=file.name;$('fl-mod').classList.add('visible');}
+        ok(p);
+      }catch(er){no(er);}
+    };
+    r.readAsArrayBuffer(file);
+  });
+}
+
+async function runDiff(){
+  // warn if cards look different
+  const oh=origParser.hdr,mh=modParser.hdr;
+  const warnings=[];
+  if(oh.productId!==mh.productId)warnings.push(`Product ID mismatch: "${oh.productId}" vs "${mh.productId}"`);
+  if(oh.cardType!==mh.cardType)warnings.push(`Card type mismatch: ${oh.cardType} vs ${mh.cardType}`);
+  if(oh.cardId!==mh.cardId)warnings.push(`Card ID mismatch: 0x${oh.cardId.toString(16).toUpperCase()} vs 0x${mh.cardId.toString(16).toUpperCase()}`);
+  if(warnings.length){
+    const proceed=confirm('These bins look like different cards:\n\n\u2022 '+warnings.join('\n\u2022 ')+'\n\nDiffs may not be meaningful. Continue anyway?');
+    if(!proceed){setStatus('Diff cancelled — cards don\u2019t match','warn');return;}
+  }
+  setStatus('Comparing...');
+  strDiffs=diffStrings(origParser,modParser);
+  itemDiffs=diffItems(origParser,modParser);
+  charDiffs=diffChars(origParser,modParser);
+  imgDiffs=await diffImages(origParser,modParser);
+
+  // strings table
+  const stb=$('tbl-strings');stb.innerHTML='';
+  for(const d of strDiffs){
+    const tr=document.createElement('tr');tr.className='changed';
+    tr.innerHTML=`<td class="id-c">${d.id}</td><td class="old">${escHtml(d.orig)}</td><td class="new">${escHtml(d.mod)}</td>`;
+    stb.appendChild(tr);
+  }
+
+  // items table
+  const itb=$('tbl-items');itb.innerHTML='';
+  for(const d of itemDiffs){
+    const tr=document.createElement('tr');tr.className='changed';
+    tr.innerHTML=`<td class="id-c">${d.id}</td><td class="field-c">${d.field}</td><td class="old">${escHtml(d.orig)}</td><td class="new">${escHtml(d.mod)}</td>`;
+    itb.appendChild(tr);
+  }
+
+  // chars table
+  const ctb=$('tbl-chars');ctb.innerHTML='';
+  for(const d of charDiffs){
+    const tr=document.createElement('tr');tr.className='changed';
+    tr.innerHTML=`<td class="id-c">${d.id}</td><td class="field-c">${d.field}</td><td class="old">${escHtml(d.orig)}</td><td class="new">${escHtml(d.mod)}</td>`;
+    ctb.appendChild(tr);
+  }
+
+  // images grid
+  const igrid=$('img-grid');igrid.innerHTML='';
+  for(const idx of imgDiffs){
+    const card=document.createElement('div');card.className='img-diff';
+    const oS=origParser.spkg.imgSets[idx],mS=modParser.spkg.imgSets[idx];
+    card.innerHTML=`<div class="img-diff-head">#${idx} \u2014 ${mS.wp*mS.sub}\u00d7${mS.hp*mS.pal}px \u00b7 ${mS.bpp}bpp</div><div class="img-pair"><div class="img-side" id="oimg-${idx}"><span class="img-label">Original</span></div><div class="img-side" id="mimg-${idx}"><span class="img-label">Modded</span></div></div>`;
+    igrid.appendChild(card);
+    // render both
+    Promise.all([origParser.spkg.render(idx),modParser.spkg.render(idx)]).then(([oc,mc])=>{
+      const oi=document.createElement('img');oc.toBlob(b=>{oi.src=URL.createObjectURL(b);},'image/png');
+      $('oimg-'+idx).appendChild(oi);
+      const mi=document.createElement('img');mc.toBlob(b=>{mi.src=URL.createObjectURL(b);},'image/png');
+      $('mimg-'+idx).appendChild(mi);
+    });
+  }
+
+  // update counts
+  const setTC=(id,n)=>{const el=$(id);el.textContent=n;el.classList.toggle('dirty',n>0);};
+  setTC('tc-strings',strDiffs.length);
+  setTC('tc-items',new Set(itemDiffs.map(d=>d.id)).size);
+  setTC('tc-chars',new Set(charDiffs.map(d=>d.id)).size);
+  setTC('tc-images',imgDiffs.length);
+
+  const total=strDiffs.length+itemDiffs.length+charDiffs.length+imgDiffs.length;
+  $('diff-summary').textContent=`${total} difference(s) found`;
+  $('btn-export').disabled=total===0;
+  $('diff-card').style.display='';
+  setStatus(`Found ${total} difference(s)`,'ok');
+}
+
+// tabs
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+  const tab=btn.dataset.tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===tab));
+}));
+
+// file loading
+setupDrop('drop-orig','in-orig',async f=>{
+  try{await loadBin(f,'orig');setStatus(origParser&&modParser?'Both loaded — comparing...':'Original loaded. Now load the modded .bin.','ok');if(origParser&&modParser)await runDiff();}
+  catch(e){setStatus('Original: '+e.message,'err');}
+});
+setupDrop('drop-mod','in-mod',async f=>{
+  try{await loadBin(f,'mod');setStatus(origParser&&modParser?'Both loaded — comparing...':'Modded loaded. Now load the original .bin.','ok');if(origParser&&modParser)await runDiff();}
+  catch(e){setStatus('Modded: '+e.message,'err');}
+});
+
+// export
+$('btn-export').addEventListener('click',async()=>{
+  if(!origParser||!modParser)return;
+  const btn=$('btn-export');btn.disabled=true;btn.textContent='Exporting...';
+  try{
+    const zip=new JSZip();
+    const h=modParser.hdr;
+    zip.file('manifest.json',JSON.stringify({name:'Extracted Patch',author:'',version:'1.0',
+      description:'Diff-extracted from modded bin',
+      target:{product_id:h.productId,card_id:'0x'+h.cardId.toString(16).toUpperCase().padStart(4,'0'),
+        build:`${h.buildYear}-${String(h.buildMonth).padStart(2,'0')}-${String(h.buildDay).padStart(2,'0')}`}},null,2));
+
+    // strings.csv
+    if(strDiffs.length){
+      const lines=['\uFEFF# TamaSmart Strings (diff-extracted)','DIALOG,,'];
+      for(const d of strDiffs)lines.push(`${d.id},${csvEsc(d.orig)},${csvEsc(d.mod)}`);
+      zip.file('strings.csv',lines.join('\n'));
+    }
+
+    // items.csv
+    if(itemDiffs.length){
+      const lines=['\uFEFF# TamaSmart Items','id,jp_name,en_name,price,fullness,happiness,image_id,worn_image_id,close_image_id,unlock_char'];
+      const byId=new Map();
+      for(const d of itemDiffs){if(!byId.has(d.id))byId.set(d.id,{});byId.get(d.id)[d.field]=d.mod;}
+      for(const[id,f] of byId){
+        const mi=modParser.allItems().find(it=>it.id===id);
+        const jp=mi?decode(mi.words.filter(w=>w)):'';
+        lines.push(`${id},${csvEsc(jp)},${csvEsc(f.name||'')},${f.price||''},${f.fullness||''},${f.happiness||''},${f.imageId||''},${f.wornImageId||''},${f.closeImageId||''},${f.unlockChar||''}`);
+      }
+      zip.file('items.csv',lines.join('\n'));
+    }
+
+    // characters.csv
+    if(charDiffs.length){
+      const lines=['\uFEFF# TamaSmart Characters','id,jp_name,en_name,pronoun,statement,question1,question2,gender,min_loss_1,min_loss_2'];
+      const byId=new Map();
+      for(const d of charDiffs){if(!byId.has(d.id))byId.set(d.id,{});byId.get(d.id)[d.field]=d.mod;}
+      for(const[id,f] of byId){
+        const mc=modParser.allChars().find(ch=>ch.id===id);
+        const jp=mc?decode(mc.name.words.filter(w=>w)):'';
+        lines.push(`${id},${csvEsc(jp)},${csvEsc(f.name||'')},${csvEsc(f.pronoun||'')},${csvEsc(f.statement||'')},${csvEsc(f.question1||'')},${csvEsc(f.question2||'')},${f.gender||''},${f.min_loss_1||''},${f.min_loss_2||''}`);
+      }
+      zip.file('characters.csv',lines.join('\n'));
+    }
+
+    // images — export raw binary patch data (palette + pixels + sprite props)
+    if(imgDiffs.length){
+      const imgFolder=zip.folder('images');
+      const mS=modParser.spkg;
+      const patches=[];
+      for(const idx of imgDiffs){
+        const s=mS.imgSets[idx];
+        const cpal=1<<s.bpp;
+        // extract palette (raw u16 values)
+        const palette=[];
+        for(let ci=0;ci<cpal;ci++)palette.push(modParser.v.getUint16(mS.pTab+(s.fp*4+ci)*2,true));
+        // extract pixel data + sprite properties for each sprite tile
+        const sprCount=s.sub*s.ws*s.hs;
+        const sprites=[];
+        for(let i=0;i<sprCount;i++){
+          const spr=mS.sprites[s.fs+i];if(!spr)continue;
+          const bc=spr.bc;
+          const pxOff=mS.xTab+spr.pi*bc;
+          const pxData=Array.from(modParser.d.slice(pxOff,pxOff+bc));
+          sprites.push({idx:i,bpp:spr.bpp,wp:spr.wp,hp:spr.hp,pixels:pxData});
+        }
+        patches.push({idx,bpp:s.bpp,palette,sprites});
+        // also render a preview PNG for visual reference
+        const canvas=await mS.render(idx);
+        const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+        imgFolder.file(String(idx).padStart(3,'0')+'.png',blob);
+      }
+      zip.file('image_patches.json',JSON.stringify(patches));
+    }
+
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=(h.productId||'tamasma').replace(/\0/g,'')+'-patch.zip';
+    a.click();URL.revokeObjectURL(a.href);
+    setStatus('Patch exported!','ok');
+  }catch(e){
+    setStatus('Export failed: '+e.message,'err');
+  }
+  btn.textContent='Export patch .zip';btn.disabled=false;
+});
+</script>
+</body>
+</html>
