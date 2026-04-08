@@ -1429,7 +1429,7 @@ function detectSlot(rom, addr, charCount) {
 }
 
 function classifyStatus(decoded) {
-  if (decoded.startsWith('さくじょ')) return 'SAKUJO';
+  if (decoded.startsWith('さくじょ') || decoded.startsWith('にわダミー')) return 'SAKUJO';
   const stripped = decoded.replace(/\[[0-9A-Fa-f]{2}\]/g, '').replace(/[\n ]/g, '');
   if (!stripped) return 'EMPTY';
   const hasLatin = /[A-Z]/.test(stripped);
@@ -1706,6 +1706,10 @@ function mergeTranslations() {
   for (const s of allStrings) {
     const t = translations[s.address];
     if (t) {
+      if (t.text === 'SAKUJO') {
+        s.status = 'SAKUJO';
+        continue;
+      }
       if (!s.patched) {
         s.pre_translated_text = t.text;
         // Check overflow
@@ -1715,6 +1719,7 @@ function mergeTranslations() {
       s.context = t.context || '';
     }
   }
+  sakujoCount = allStrings.filter(s => s.status === 'SAKUJO').length;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1881,8 +1886,9 @@ function updateProgress() {
     let st = stats.get(s.region);
     if (!st) { st = { total: 0, en: 0, mixed: 0 }; stats.set(s.region, st); }
     if (s.status === 'SAKUJO') continue;
+    if (s.length < 3) continue;
     st.total++;
-    if (s.status === 'EN' || s.patched) st.en++;
+    if (s.status === 'EN' || s.patched || s.pre_translated_text) st.en++;
     else if (s.status === 'MIXED') st.mixed++;
   }
   grid.innerHTML = '';
