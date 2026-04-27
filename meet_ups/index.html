@@ -342,18 +342,15 @@
   }
   tbody tr.str-row {
     border-bottom: 1px solid var(--border);
-    cursor: pointer;
     transition: background 0.1s;
   }
-  tbody tr.str-row:hover { background: var(--pink-soft); }
   tbody tr.str-row.active { background: var(--blue-soft); }
   tbody tr.str-row.patched { background: var(--mint-soft); }
-  tbody tr.str-row.patched:hover { background: #d0f0e6; }
   tbody tr.str-row.patched.active { background: #c0eadb; }
 
   td {
-    padding: 8px 14px;
-    vertical-align: middle;
+    padding: 10px 14px;
+    vertical-align: top;
     font-size: 13px;
   }
   td.addr {
@@ -382,20 +379,35 @@
     font-size: 12px;
     font-weight: 500;
   }
-  td.preview-col {
-    max-width: 340px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  td.orig-col, td.trans-col {
+    width: 38%;
+    max-width: 0;
+  }
+  .orig-text {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     color: var(--slate);
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    min-height: 36px;
+  }
+  td.trans-col .edit-textarea { width: 100%; }
+  .trans-actions {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
   }
   .context-hint {
     font-family: 'Nunito', sans-serif;
     font-size: 11px;
     color: var(--muted);
-    margin-top: 2px;
+    margin-top: 6px;
     font-weight: 600;
   }
 
@@ -418,80 +430,28 @@
   tbody tr.str-row.sakujo { opacity: 0.35; }
   tbody tr.str-row.sakujo:hover { opacity: 0.6; }
 
-  /* ── Edit Panel ── */
-  tr.edit-row td {
-    background: #FAFAFF;
-    border-bottom: 3px solid var(--blue);
-    padding: 0;
-  }
-  .edit-panel { padding: 20px 24px; max-width: 640px; }
-  .edit-header {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-  }
-  .edit-addr {
-    font-family: 'Silkscreen', monospace;
-    font-size: 14px;
-    color: var(--blue);
-  }
-  .edit-meta {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-  }
-  .edit-overflow-warn {
-    color: var(--danger);
-    font-size: 12px;
-    font-weight: 700;
-  }
-  .edit-context {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    font-style: italic;
-  }
-  .edit-body {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .edit-col label {
-    display: block;
-    font-family: 'Silkscreen', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-  .orig-pre {
-    background: var(--bg);
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    white-space: pre-wrap;
-    color: var(--slate);
-    min-height: 36px;
-  }
+  /* ── Inline edit cell ── */
   .edit-textarea {
     width: 100%;
-    padding: 12px 14px;
+    padding: 8px 10px;
     border: 2px solid var(--border);
     border-radius: var(--radius);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
+    font-size: 12px;
     resize: vertical;
     min-height: 36px;
     outline: none;
     color: var(--slate);
+    background: var(--card);
     transition: border-color 0.15s;
   }
   .edit-textarea:focus { border-color: var(--blue); }
+  .row-overflow-warn {
+    color: var(--danger);
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
 
   .char-counter {
     margin-top: 6px;
@@ -987,7 +947,8 @@
         <th>Region</th>
         <th>Slot</th>
         <th>Used / Max</th>
-        <th>Preview</th>
+        <th>Original (JP)</th>
+        <th>Translation</th>
         <th>Status</th>
       </tr>
     </thead>
@@ -1792,7 +1753,7 @@ function applyPatch(addrHex, maxChars) {
   patchCount = Object.keys(patches).length;
   updatePatchBadge();
   updateProgress();
-  closeEdit();
+  renderTable();
 }
 
 function revertPatch(addrHex) {
@@ -1998,6 +1959,7 @@ function previewText(decoded) {
 function renderTable() {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
+  setupTbodyDelegation();
 
   for (const s of filtered) {
     const tr = document.createElement('tr');
@@ -2007,43 +1969,84 @@ function renderTable() {
       + (s.address_hex === activeAddr ? ' active' : '');
     tr.dataset.addr = s.address_hex;
 
+    const addr = s.address_hex;
     const usedNow = s.patched ? s.length : countCharsROM(s.original_decoded);
-    const preview = previewText(s.patched ? s.decoded : s.original_decoded);
+    const translation = s.patched ? s.decoded : (s.pre_translated_text || s.original_decoded);
+    const isPreFilled = !s.patched && !!s.pre_translated_text;
     const hasPre  = s.pre_translated_text && !s.patched;
     const overflowWarn = s.overflow ? ' \u26A0' : '';
     const ctx = s.context || '';
 
+    const tCount = countCharsROM(translation);
+    const tRatio = s.max_chars > 0 ? tCount / s.max_chars : 0;
+    const tPct = Math.min(tRatio * 100, 100).toFixed(1);
+    const tCls = tRatio >= 1.0 ? 'counter-over' : tRatio >= 0.8 ? 'counter-warn' : 'counter-ok';
+    const tColor = tRatio >= 1.0 ? 'var(--danger)' : tRatio >= 0.8 ? 'var(--orange)' : 'var(--mint)';
+    const hasApostrophe = /['’]/.test(translation);
+    const overSlot = tCount > s.max_chars;
+    const btnDisabled = (hasApostrophe || overSlot) ? 'disabled' : '';
+    const errText = hasApostrophe
+      ? '✖ Apostrophes not supported — write ISNT not ISN\'T'
+      : overSlot
+        ? `Too long by ${tCount - s.max_chars} char(s)`
+        : '';
+
+    const subRule = SUBSTRING_BY_ADDR[addr];
+    const subPreview = subRule ? `
+        <div class="substring-preview" id="subprev_${addr}">
+          <div class="substring-preview-title">Substring Pointer Active</div>
+          <div class="substring-preview-row">
+            <span class="substring-label">Full string:</span>
+            <span class="substring-value" id="subfull_${addr}"></span>
+          </div>
+          <div class="substring-preview-row">
+            <span class="substring-label">Char ${subRule.charOffset}+:</span>
+            <span class="substring-value" id="subsub_${addr}"></span>
+            <span class="substring-desc">${esc(subRule.label)}</span>
+          </div>
+        </div>` : '';
+
     tr.innerHTML = `
-      <td class="addr">${s.patched ? '<span class="badge badge-P">P</span>' : ''}${s.address_hex}</td>
+      <td class="addr">${s.patched ? '<span class="badge badge-P">P</span>' : ''}${addr}</td>
       <td class="region-col">${esc(s.region)}</td>
       <td class="slot-col">${s.slot_bytes}B</td>
       <td class="used-col">${usedNow}/${s.max_chars}</td>
-      <td class="preview-col" title="${esc(ctx ? ctx + ' | ' + preview : preview)}">${esc(preview)}${ctx ? '<div class="context-hint">' + esc(ctx) + '</div>' : ''}</td>
+      <td class="orig-col">
+        <div class="orig-text">${esc(s.original_decoded)}</div>
+        ${ctx ? '<div class="context-hint">' + esc(ctx) + '</div>' : ''}
+        ${s.overflow ? '<div class="row-overflow-warn">⚠ Translation overflows slot</div>' : ''}
+      </td>
+      <td class="trans-col">
+        ${isPreFilled ? '<div class="context-hint" style="color:var(--purple);margin-bottom:4px;">PRE-TRANSLATED</div>' : ''}
+        <textarea class="edit-textarea" id="ta_${addr}" data-addr="${addr}" data-max="${s.max_chars}" rows="3" spellcheck="false">${esc(translation)}</textarea>
+        <div class="char-counter">
+          <span class="counter-text ${tCls}" id="ctr_${addr}">${tCount} / ${s.max_chars} chars</span>
+          <div class="counter-bar">
+            <div class="counter-fill" id="fill_${addr}" style="width:${tPct}%;background:${tColor}"></div>
+          </div>
+        </div>
+        ${subPreview}
+        <div class="edit-error" id="err_${addr}">${esc(errText)}</div>
+        <div class="trans-actions">
+          <button class="btn btn-pink" id="applyBtn_${addr}" ${btnDisabled}
+            onclick="applyPatch('${addr}', ${s.max_chars})">Apply</button>
+          <button class="btn btn-ghost" onclick="revertPatch('${addr}')">Reset</button>
+        </div>
+      </td>
       <td>
         ${hasPre ? '<span class="badge badge-PRE">PRE</span>' : ''}
         <span class="badge badge-${s.status}">${s.status}${overflowWarn}</span>
       </td>
     `;
-    tr.addEventListener('click', () => toggleEdit(s.address_hex));
     tbody.appendChild(tr);
 
-    if (s.address_hex === activeAddr) {
-      tbody.appendChild(buildEditRow(s));
+    if (subRule) {
+      updateCounter(addr, s.max_chars);
     }
   }
 }
 
-function buildEditRow(s) {
-  const tr = document.createElement('tr');
-  tr.className = 'edit-row fade-in';
-  tr.dataset.editAddr = s.address_hex;
-
-  const currentText = s.patched ? s.decoded : (s.pre_translated_text || s.original_decoded);
-  const isPreFilled = !s.patched && s.pre_translated_text;
-
-  const td = document.createElement('td');
-  td.colSpan = 6;
-  td.innerHTML = `
+function _removed_buildEditRow_top() { /*
     <div class="edit-panel">
       <div class="edit-header">
         <span class="edit-addr">${s.address_hex}</span>
@@ -2094,33 +2097,52 @@ function buildEditRow(s) {
     </div>
   `;
   tr.appendChild(td);
-
-  setTimeout(() => {
-    const ta = document.getElementById(`ta_${s.address_hex}`);
-    if (!ta) return;
-    ta.addEventListener('input', () => updateCounter(s.address_hex, s.max_chars));
-    ta.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        const btn = document.getElementById(`applyBtn_${s.address_hex}`);
-        if (btn && !btn.disabled) applyPatch(s.address_hex, s.max_chars);
-      }
-    });
-    updateCounter(s.address_hex, s.max_chars);
-    ta.focus();
-  }, 0);
-
-  return tr;
-}
-
-function toggleEdit(addrHex) {
-  activeAddr = activeAddr === addrHex ? null : addrHex;
-  renderTable();
-}
+*/ }
 
 function closeEdit() {
+  if (!activeAddr) return;
+  const cur = document.querySelector('tr.str-row.active');
   activeAddr = null;
-  renderTable();
+  if (cur) cur.classList.remove('active');
+}
+
+function setupTbodyDelegation() {
+  const tbody = document.getElementById('tbody');
+  if (!tbody || tbody.dataset.delegated === '1') return;
+  tbody.dataset.delegated = '1';
+
+  tbody.addEventListener('input', (e) => {
+    const ta = e.target;
+    if (!(ta instanceof HTMLTextAreaElement)) return;
+    const addr = ta.dataset.addr;
+    const max = parseInt(ta.dataset.max, 10);
+    if (!addr || isNaN(max)) return;
+    updateCounter(addr, max);
+  });
+
+  tbody.addEventListener('keydown', (e) => {
+    const ta = e.target;
+    if (!(ta instanceof HTMLTextAreaElement)) return;
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const addr = ta.dataset.addr;
+      const max = parseInt(ta.dataset.max, 10);
+      const btn = document.getElementById(`applyBtn_${addr}`);
+      if (btn && !btn.disabled) applyPatch(addr, max);
+    }
+  });
+
+  tbody.addEventListener('focusin', (e) => {
+    const ta = e.target;
+    if (!(ta instanceof HTMLTextAreaElement)) return;
+    const addr = ta.dataset.addr;
+    if (!addr || addr === activeAddr) return;
+    const prev = document.querySelector('tr.str-row.active');
+    if (prev) prev.classList.remove('active');
+    activeAddr = addr;
+    const row = ta.closest('tr.str-row');
+    if (row) row.classList.add('active');
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2235,6 +2257,8 @@ function jumpNextUntranslated() {
       renderTable();
       const row = document.querySelector(`tr[data-addr="${filtered[i].address_hex}"]`);
       if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const ta = document.getElementById(`ta_${filtered[i].address_hex}`);
+      if (ta) ta.focus();
       showToast('Jumped to next untranslated');
       return;
     }
@@ -2245,6 +2269,8 @@ function jumpNextUntranslated() {
       renderTable();
       const row = document.querySelector(`tr[data-addr="${filtered[i].address_hex}"]`);
       if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const ta = document.getElementById(`ta_${filtered[i].address_hex}`);
+      if (ta) ta.focus();
       showToast('Wrapped to first untranslated');
       return;
     }
@@ -2666,6 +2692,9 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (document.getElementById('modalOverlay').classList.contains('open')) {
       document.getElementById('modalOverlay').classList.remove('open');
+    } else if (tag === 'TEXTAREA') {
+      e.target.blur();
+      closeEdit();
     } else if (activeAddr) {
       closeEdit();
     }
