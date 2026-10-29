@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tama-Go Code Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FFF8F0;
+    --card: #FFFFFF;
+    --border: #F0E6DA;
+    --border-strong: #E0D4C8;
+    --pink: #E8587A;
+    --pink-soft: #FDE8ED;
+    --pink-dark: #C9405E;
+    --mint: #5BC4A8;
+    --mint-soft: #E0F5EF;
+    --mint-dark: #3DA88A;
+    --slate: #2D2A32;
+    --muted: #9B95A0;
+    --muted-light: #C8C2CC;
+    --danger: #E05252;
+    --danger-soft: #FDE8E8;
+    --shadow-sm: 0 1px 3px rgba(45,42,50,.06);
+    --shadow-md: 0 4px 12px rgba(45,42,50,.08);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--slate);
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--muted-light); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── Header ── */
+  #header {
+    background: var(--card);
+    border-bottom: 2px solid var(--border);
+    padding: 16px 24px;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    font-family: 'Silkscreen', monospace;
+    font-size: 18px;
+    color: var(--pink);
+    white-space: nowrap;
+    letter-spacing: -0.5px;
+    user-select: none;
+  }
+  .logo-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--mint);
+    border-radius: 50%;
+    margin-left: 4px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* ── Generator ── */
+  #main {
+    max-width: 345px;
+    margin: 0 auto;
+    padding: 32px 16px 48px;
+  }
+  #intro {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #intro strong {
+    font-family: 'Silkscreen', monospace;
+    font-size: 16px;
+    color: var(--slate);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .field { margin-bottom: 16px; }
+  .field-row {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .file-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .text-input, .profile-select {
+    display: block;
+    width: 100%;
+    margin: 0 auto;
+    padding: 7px 12px;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--card);
+    color: var(--slate);
+    transition: border-color 0.15s;
+  }
+  .profile-select {
+    width: auto;
+    cursor: pointer;
+  }
+  .num-input { text-align: center; }
+  #gotchiPoints { width: 64px; }
+  #hungerAdd { width: 44px; }
+  .text-input:hover, .profile-select:hover { border-color: var(--border-strong); }
+  .text-input:focus, .profile-select:focus { border-color: var(--pink); outline: none; }
+
+  #petName { width: 160px; }
+
+  .code-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 160px;
+    margin: 0 auto;
+  }
+  .code-input {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .btn {
+    padding: 7px 16px;
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-pink { background: var(--pink); color: #fff; }
+  .btn-pink:hover { background: var(--pink-dark); }
+
+  #statusMsg {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  #statusMsg.err { color: var(--danger); }
+
+  /* ── Result ── */
+  #result { display: none; }
+  #result.visible {
+    display: block;
+    border-top: 2px solid var(--border);
+    margin-top: 20px;
+    padding-top: 20px;
+  }
+  #result h2 {
+    font-family: 'Silkscreen', monospace;
+    font-size: 14px;
+    color: var(--slate);
+    margin-bottom: 12px;
+  }
+  #logoutCode {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    line-height: 1.5;
+    text-align: center;
+    white-space: pre;
+    color: #000;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    width: fit-content;
+    margin: 0 auto;
+    padding: 14px 12px 14px 20px;  /* extra left pad offsets the letter-spacing after the last digit */
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeIn 0.2s ease-out; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header">
+  <div class="header-top">
+    <div class="logo">TAMA-GO Code Generator<span class="logo-dot"></span></div>
+    <a href="https://github.com/maragotchi/maragotchi_cloudflare" target="_blank" rel="noopener" title="View on GitHub" style="margin-left:auto;display:inline-flex;align-items:center;padding:5px 10px;background:var(--pink-soft);color:var(--pink-dark);border:2px solid var(--border);border-radius:var(--radius);text-decoration:none;font-size:12px;font-weight:700;font-family:'Nunito',sans-serif;gap:5px;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderColor='var(--border)'">
+      <svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</div>
+
+<div id="main">
+  <!-- Intro -->
+  <div id="intro">
+    <strong>How to use</strong>
+    Enter the device's username and the login password from Outings -> PC to get the logout password.
+  </div>
+
+  <!-- Generator -->
+  <div class="card">
+    <div class="field">
+      <label class="file-label" for="petName">Username of Device</label>
+      <input id="petName" type="text" class="text-input" maxlength="8" autocomplete="off" value="MAMETCHI">
+      <div class="hint">Can use A-Z, 0-9, and . ! ?</div>
+    </div>
+    <div class="field">
+      <label class="file-label" for="loginTop">Login Password</label>
+      <div class="code-rows">
+        <input id="loginTop" type="text" class="text-input code-input" maxlength="6" autocomplete="off" aria-label="Login password, top row" value="E45925"
+          oninput="onLoginTopInput()" onpaste="onLoginPaste(event)">
+        <input id="loginBottom" type="text" class="text-input code-input" maxlength="6" autocomplete="off" aria-label="Login password, bottom row" value="A0F46C">
+      </div>
+    </div>
+    <div class="field">
+      <label class="file-label" for="itemSelect">Item to Unlock</label>
+      <select id="itemSelect" class="profile-select">
+        <option value="">No item</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="file-label" for="gotchiPoints">Gotchi Points x1000</label>
+        <input id="gotchiPoints" type="text" class="text-input num-input" inputmode="numeric" autocomplete="off" value="5" oninput="keepDigits(this, 3)">
+        <div class="hint">0-999</div>
+      </div>
+      <div class="field">
+        <label class="file-label" for="hungerAdd">Hunger Meter</label>
+        <input id="hungerAdd" type="text" class="text-input num-input" inputmode="numeric" autocomplete="off" value="0" oninput="keepDigits(this, 1)">
+        <div class="hint">0-7 hearts added</div>
+      </div>
+    </div>
+    <button class="btn btn-pink" id="generateBtn" onclick="generateLogout()">Generate</button>
+    <div id="statusMsg"></div>
+
+    <!-- Result -->
+    <div id="result">
+      <h2>Logout Password</h2>
+      <div id="logoutCode"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PASSWORD TABLES
+// Login is built at 2:6229 / 2:6378, logout is checked at 2:643E and applied at 2:6192.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Key for the checksum digit (2:63CF)
+const CKS_KEY = [0x11, 0x32, 0x53, 0x74, 0x15, 0x36, 0x58, 0x77,
+                 0x29, 0x4F, 0x6E, 0x0D, 0x2C, 0x4B, 0x6A, 0x7F];
+
+// Key for the free bit (2:63DF)
+const BIT_KEY = [0x57, 0x3A];
+
+// Name letter -> key byte (2:6414)
+const NAME_KEY = [0xA0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD,
+                  0xEE, 0xFF, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C,
+                  0x0D, 0x0E, 0x0F, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xA0];
+
+// Which name letters feed the key? ($0309, $030D, $030A, $030B, $0308)
+const NAME_POS = [1, 5, 2, 3, 0];
+
+// Device name font: 0 = blank, 1-26 = A-Z, 27-36 = 0-9, then . ! ?
+const NAME_CHARS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.!?';
+
+// Screen digit pairs -> bytes $0287, $0286, $0285, $028A, $0289, $0288
+const DIGIT_ORDER = [2, 1, 0, 5, 4, 3];
+
+// Figure ID -> item
+const PC_ITEMS = [
+  { id: 3,  figure: 'Mametchi',       item: 'UFO' },
+  { id: 4,  figure: 'Memetchi',       item: 'Scarf' },
+  { id: 5,  figure: 'Kuchipatchi',    item: 'Beijing Duck' },
+  { id: 6,  figure: 'Chamametchi',    item: 'Jump Rope' },
+  { id: 7,  figure: 'Violetchi',      item: 'Watering Can' },
+  { id: 8,  figure: 'Ringotchi',      item: 'Cherry Cake' },
+  { id: 9,  figure: 'Kuromametchi',   item: 'Skateboard' },
+  { id: 10, figure: 'Sebiretchi',     item: 'Tacos' },
+  { id: 11, figure: 'Ponytchi',       item: 'Makeup 1' },
+  { id: 12, figure: 'Ichigotchi',     item: 'Meatball Sub' },
+  { id: 13, figure: 'Shimashimatchi', item: 'Boombox' },
+  { id: 14, figure: 'Makiko',         item: 'Tama-Globe' },
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PASSWORD MATH UGH
+// ══════════════════════════════════════════════════════════════════════════════
+
+function nameCodes(name) {
+  const codes = [];
+  for (const ch of name.toUpperCase()) {
+    const code = NAME_CHARS.indexOf(ch);
+    if (code < 0) throw new Error(`"${ch}" can't be in a Tama-Go name. Use A-Z, 0-9, . ! or ?`);
+    codes.push(code);
+  }
+  if (codes.length < 1 || codes.length > 8) throw new Error('A name is 1 to 8 characters.');
+  if (codes[0] === 0) throw new Error("A name can't start with a space.");
+  while (codes.length < 8) codes.push(0);
+  return codes;
+}
+
+function nameKey(name) {
+  const codes = nameCodes(name);
+  return NAME_POS.map(p => NAME_KEY[codes[p]]);
+}
+
+function checksum(bytes) {
+  let sum = 0;
+  for (let y = 0; y < 11; y++) {
+    const v = bytes[y >> 1];
+    sum += (y % 2 === 0) ? (v & 0x0F) : (v >> 4);
+  }
+  return (-sum) & 0x0F;
+}
+
+function digitsToBytes(digits) {
+  const bytes = [0, 0, 0, 0, 0, 0];
+  DIGIT_ORDER.forEach((i, k) => { bytes[i] = (digits[2 * k] << 4) | digits[2 * k + 1]; });
+  return bytes;
+}
+
+function bytesToDigits(bytes) {
+  const digits = [];
+  for (const i of DIGIT_ORDER) digits.push(bytes[i] >> 4, bytes[i] & 0x0F);
+  return digits;
+}
+
+function swapPairs(digits) {
+  return digits.map((_, i) => digits[i ^ 1]);
+}
+
+function parseCode(text) {
+  const clean = text.replace(/[\s-]/g, '').toUpperCase();
+  if (!/^[0-9A-F]{12}$/.test(clean)) throw new Error('A login password is 12 digits, each 0-9 or A-F.');
+  return clean.split('').map(ch => parseInt(ch, 16));
+}
+
+function formatCode(digits) {
+  const s = digits.map(d => d.toString(16).toUpperCase()).join('');
+  return s.slice(0, 6) + '\n' + s.slice(6);
+}
+
+function decodeLogin(name, digits) {
+  const bytes = digitsToBytes(digits);
+  const key = nameKey(name);
+  const plain = bytes.slice(0, 5).map((v, i) => v ^ BIT_KEY[bytes[5] & 1] ^ key[i] ^ CKS_KEY[bytes[5] >> 4]);
+  plain.push(bytes[5]);
+  return { plain, ok: checksum(plain) === (plain[5] >> 4) };
+}
+
+function makeLogout(name, loginDigits, points, hunger, itemId) {
+  let login = decodeLogin(name, loginDigits);
+  let swapped = false;
+  if (!login.ok) {
+    login = decodeLogin(name, swapPairs(loginDigits));
+    swapped = login.ok;
+  }
+  if (!login.ok) throw new Error("That login password doesn't match this name. Check both for typos.");
+  if (!(points >= 0 && points <= 999)) throw new Error('Gotchi Points go from 0 to 999 (thousands).');
+  if (!(hunger >= 0 && hunger <= 7)) throw new Error('Hunger goes from 0 to 7.');
+
+  const plain = login.plain;
+  const bytes = [
+    0x80 | (plain[0] & 0x7F),                        // $0285: echoes login byte $019A
+    plain[1],                                        // $0286: echoes login byte $019B
+    itemId === null ? 0 : (0x80 | (itemId & 0x7F)), // $0287: unlock flag + figure ID
+    points & 0xFF,                                   // $0288: points, low 8 bits
+    ((hunger & 7) << 5) | ((points >> 8) & 3),       // $0289: hunger, points high 2 bits
+  ];
+  const last = checksum(bytes.concat([0])) << 4;     // $028A: checksum digit, free bit 0
+  const key = nameKey(name);
+  const scrambled = bytes.map((v, i) => v ^ CKS_KEY[last >> 4] ^ key[i] ^ BIT_KEY[last & 1]);
+  const out = bytesToDigits(scrambled.concat([last]));
+  return swapped ? swapPairs(out) : out;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UI Stuff
+// ══════════════════════════════════════════════════════════════════════════════
+
+function setStatus(msg, isError) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = isError ? 'err' : '';
+}
+
+function fillItemSelect() {
+  const select = document.getElementById('itemSelect');
+  for (const p of PC_ITEMS) {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.figure} · ${p.item}`;
+    select.appendChild(opt);
+  }
+  select.value = '3';
+}
+
+function keepDigits(input, maxDigits) {
+  input.value = input.value.replace(/\D/g, '').slice(0, maxDigits);
+}
+
+function onLoginTopInput() {
+  if (document.getElementById('loginTop').value.length === 6) {
+    document.getElementById('loginBottom').focus();
+  }
+}
+
+function onLoginPaste(e) {
+  const text = (e.clipboardData || window.clipboardData).getData('text').replace(/[\s-]/g, '');
+  if (text.length <= 6) return;
+  e.preventDefault();
+  document.getElementById('loginTop').value = text.slice(0, 6);
+  document.getElementById('loginBottom').value = text.slice(6, 12);
+  document.getElementById('loginBottom').focus();
+}
+
+function generateLogout() {
+  const result = document.getElementById('result');
+  try {
+    const name = document.getElementById('petName').value.trim();
+    const login = parseCode(document.getElementById('loginTop').value + document.getElementById('loginBottom').value);
+    const itemValue = document.getElementById('itemSelect').value;
+    const itemId = itemValue === '' ? null : parseInt(itemValue, 10);
+    const points = parseInt(document.getElementById('gotchiPoints').value || '0', 10);
+    const hunger = parseInt(document.getElementById('hungerAdd').value || '0', 10);
+
+    document.getElementById('logoutCode').textContent = formatCode(makeLogout(name, login, points, hunger, itemId));
+    result.classList.add('visible', 'fade-in');
+    setStatus('');
+  } catch (err) {
+    result.classList.remove('visible');
+    setStatus(err.message, true);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// If you use this at all, please credit me! :) 
+// ══════════════════════════════════════════════════════════════════════════════
+
+fillItemSelect();
+generateLogout();
+</script>
+</body>
+</html>
